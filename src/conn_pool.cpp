@@ -72,7 +72,7 @@ void conn_pool::async_get_slave(get_soc_callback cb_)
 
 void conn_pool::__p_insert(const std::string &ip_, unsigned port_, std::multimap<unsigned, conn_ptr> &target_, unsigned priority_)
 {
-    if (priority_ > 100 || priority_ < 1)
+    if (priority_ > 10 || priority_ < 1)
         throw std::logic_error("Priority value out of range (1-100).");
 
     if (!hnet::is_ip_v4(ip_))

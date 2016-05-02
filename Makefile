@@ -61,6 +61,7 @@ EXAMPLES_SOURCES = examples/example.cpp \
                    src/io_buffers.cpp \
                    src/buff_abstract.cpp \
 		   src/cmd_traits.cpp \
+                   src/serial.cpp \
                    utils/h_net.cpp \
                    utils/h_strings.cpp
 

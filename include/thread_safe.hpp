@@ -179,19 +179,39 @@ template <typename AllocT>
 class spool
 {
 public:
-    spool();
-    void add(AllocT unit_, unsigned pref_)
+    spool()
     {
+        _map = static_cast<unsigned char *>(malloc(1000));
+    }
+    ~spool()
+    {
+        free(_map);
+    }
+
+    void add_unit(AllocT unit_, unsigned pref_)
+    {
+        if (pref_ < 1 || pref_ > 10 )
+            throw std::logic_error("Priority value out of range (1-10).");
+
         std::lock_guard<std::mutex> lc(_rw_locker);
         _spool.push_back(std::pair<unsigned, AllocT>(pref_, unit_));
-        __rebuild_map();
+        unsigned last_index = _spool.size() - 1;
+        for (int i = _map_size; i < _map_size + pref_; ++i)
+            _map[i] = last_index;
+
+         _map_size += pref_;
+    }
+    const AllocT & rand_unit()
+    {
+        return _spool[_map[rand() % (_map_size - 1)]].second;
     }
 
 private:
     std::vector<std::pair<unsigned, AllocT>> _spool;
-    void __rebuild_map();
-    std::mutex _rw_locker;
 
+    std::mutex _rw_locker;
+    unsigned _map_size {0};
+    unsigned char * _map {nullptr};
 
 };
 

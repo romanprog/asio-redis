@@ -111,6 +111,8 @@ protected:
     std::string _query;
     DBuffsPosList _ext_buffs_list;
 
+    friend class serial_query_adapter;
+
     // Recursive query builder.
     template <typename ...Args>
     void _build_RESP_next(const std::string & part_, Args && ...args)
@@ -197,10 +199,23 @@ class serial_query_adapter
 public:
     template <typename qT>
     explicit serial_query_adapter(const qT & qu_)
+        : _cb(qu_._cb),
+          _pcount(qu_._pcount),
+          _query(qu_._query),
+          _ext_buffs_list(qu_._ext_buffs_list)
     {
 
     }
+    template <typename ...Args>
+    void callback(Args && ...args) const
+    {
+        _cb(std::forward<Args>(args)...);
+    }
 
+    std::vector<asio::const_buffer> get_multibuffer() const
+    {
+        return build_multibuffer(_query, _ext_buffs_list);
+    }
 
 };
 

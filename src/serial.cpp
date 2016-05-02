@@ -8,7 +8,9 @@ namespace procs {
 
 serial::serial(strand_ptr main_loop_, soc_ptr &&soc_)
     : _ev_loop(main_loop_),
-      _socket(std::move(soc_))
+      _socket(std::move(soc_)),
+      _reading_buff(_resp_parser.buff())
+
 {
 
 }
@@ -59,7 +61,7 @@ void serial::__resp_proc()
               __resp_proc();
           } else   {
               // Critical error. Answer resived, but no one callback in queue.
-              if (_cb_queue.empty())
+              if (_query_queue.empty())
                   throw std::logic_error("No one callbacks(11). Query/resp processors sync error.");
 
               // Call client function.
