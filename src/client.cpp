@@ -1,5 +1,7 @@
 #include "../include/client.hpp"
 
+#include <asio.hpp>
+
 namespace redis {
 
 

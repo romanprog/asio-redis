@@ -91,7 +91,7 @@ conn_ptr conn_pool::__get_best_rand(std::multimap<unsigned, conn_ptr> &target_)
 
     std::lock_guard<std::mutex> lock(_pools_sync_mux);
     if (_master_pool.empty())
-        throw std::logic_error("Master spool is empty.");
+        throw std::logic_error("Spool is empty.");
 
     for (auto rit = target_.rbegin(); rit != target_.rend(); ++rit)
     {

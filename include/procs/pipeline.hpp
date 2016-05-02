@@ -1,16 +1,18 @@
 #ifndef PIPELINE_HPP
 #define PIPELINE_HPP
 
-// #include "query.hpp"
-#include "proto.hpp"
-#include "thread_safe.hpp"
-#include "buffers/io_buffers.hpp"
+#include "../query.hpp"
+#include "../proto.hpp"
+#include "../thread_safe.hpp"
+#include "../buffers/io_buffers.hpp"
 
 #include <mutex>
 #include <thread>
 #include <future>
 
 namespace redis {
+
+namespace procs {
 
 class pipeline
 {
@@ -44,6 +46,8 @@ private:
     void __req_proc_manager();
     void __resp_proc();
 };
+
+} // namespace procs
 
 } // namespace redis
 

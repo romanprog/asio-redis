@@ -89,10 +89,17 @@ public:
         _query += "\r\n";
     }
 
-    std::string & get_query()
+    const std::string & get_query() const
     {
         return _query;
     }
+
+    template <typename ...Args>
+    void callback(Args && ...args)
+    {
+        _cb(std::forward<Args>(args)...);
+    }
+
     std::vector<asio::const_buffer> get_multibuffer() const
     {
         return build_multibuffer(_query, _ext_buffs_list);
@@ -177,6 +184,23 @@ protected:
                                                                         asio::buffer(direct_buff_.data(),
                                                                                      direct_buff_.size())));
     }
+
+};
+
+class serial_query_adapter
+{
+    std::function<void (rds_err, resp_data &)> _cb;
+    unsigned _pcount{0};
+    std::string _query;
+    DBuffsPosList _ext_buffs_list;
+
+public:
+    template <typename qT>
+    explicit serial_query_adapter(const qT & qu_)
+    {
+
+    }
+
 
 };
 

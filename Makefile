@@ -1,4 +1,5 @@
 CXX:=$(shell sh -c 'type $(CXX) >/dev/null 2>/dev/null && echo $(CXX) || echo g++')
+#CXX = clang++
 
 MYSQL_C_INC ?= $(shell mysql_config --cflags)
 MYSQL_C_LIBS ?= $(shell mysql_config --libs)
@@ -38,10 +39,12 @@ CFLAGS=-c -Wall
 LIB_SOURCES = src/client.cpp \
           src/conn_pool.cpp \
           src/pipeline.cpp \
+          src/serial.cpp \
           src/proto.cpp \
           src/query.cpp \
           src/io_buffers.cpp \
           src/buff_abstract.cpp \
+	  src/cmd_traits.cpp \
           utils/h_net.cpp \
           utils/h_strings.cpp \
 
@@ -57,6 +60,7 @@ EXAMPLES_SOURCES = examples/example.cpp \
                    src/query.cpp \
                    src/io_buffers.cpp \
                    src/buff_abstract.cpp \
+		   src/cmd_traits.cpp \
                    utils/h_net.cpp \
                    utils/h_strings.cpp
 

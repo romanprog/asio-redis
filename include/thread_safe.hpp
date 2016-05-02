@@ -44,6 +44,13 @@ public:
         std::lock_guard<LockT> lm(_rw_lock);
         _base_queue.push(val);
     }
+
+    const AllocT & front()
+    {
+        std::lock_guard<LockT> lm(_rw_lock);
+        return _base_queue.front();
+    }
+
     void pop()
     {
         std::lock_guard<LockT> lm(_rw_lock);
@@ -165,6 +172,26 @@ public:
     {
         std::cout << this->_base_queue.front().use_count() << std::endl;
     }
+
+};
+
+template <typename AllocT>
+class spool
+{
+public:
+    spool();
+    void add(AllocT unit_, unsigned pref_)
+    {
+        std::lock_guard<std::mutex> lc(_rw_locker);
+        _spool.push_back(std::pair<unsigned, AllocT>(pref_, unit_));
+        __rebuild_map();
+    }
+
+private:
+    std::vector<std::pair<unsigned, AllocT>> _spool;
+    void __rebuild_map();
+    std::mutex _rw_locker;
+
 
 };
 

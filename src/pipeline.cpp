@@ -1,6 +1,10 @@
-#include "../include/pipeline.hpp"
+#include "../include/procs/pipeline.hpp"
+
+#include <asio.hpp>
 
 namespace redis {
+
+namespace procs {
 
 
 pipeline::pipeline(strand_ptr main_loop_, soc_ptr &&soc_)
@@ -77,10 +81,9 @@ void pipeline::__resp_proc()
     _reading_buff.release(2048);
     auto resp_handler = [this](std::error_code ec, std::size_t bytes_sent)
     {
-          if (ec) {
-              // log_debug("Resp proc error. May be stoped. % %", ec.value(), ec.message());
+          if (ec)
               return;
-          }
+
           _reading_buff.accept(bytes_sent);
 
           while (_resp_parser.parse_one(_respond))
@@ -102,5 +105,6 @@ void pipeline::__resp_proc()
     _socket->async_read_some(asio::buffer(_reading_buff.data_top(), _reading_buff.size_avail()), _ev_loop->wrap(resp_handler));
 }
 
+} // namespace procs
 
-}
+} // namespace redis
