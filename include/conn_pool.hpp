@@ -9,46 +9,24 @@
 
 namespace redis {
 
-class conn;
-
-using conn_ptr = std::shared_ptr<conn>;
-
-class conn
+class conn_manager
 {
 public:
-    conn(const strand_ptr & ev, std::string ip_, unsigned port_);
-    void get(get_soc_callback cb_);
+    conn_manager(const strand_ptr & ev, std::string ip_, unsigned port_);
+    void async_get(get_soc_callback cb_, unsigned timeout_ = 5);
+    void async_get(get_socs_list_callback cb_, unsigned count_, unsigned timeout_ = 5);
+    soc_ptr get(asio::error_code &err, unsigned timeout_ = 5);
 private:
     strand_ptr _ev_loop;
     threadsafe::conn_queue<soc_ptr> _cache;
     std::string _ip;
     unsigned _port;
+    void __async_get_one(std::vector<soc_ptr> &&result, get_socs_list_callback cb_, unsigned count_, unsigned timeout_ = 1);
 };
 
-
-class conn_pool
-{
-public:
-    conn_pool(strand_ptr ev);
-    // Interface sketches
-    void add_master(const std::string & ip_, unsigned port_, unsigned priority_ = 100);
-    void add_slave(const std::string & ip_, unsigned port_, unsigned priority_ = 100);
-
-    void async_get_master(get_soc_callback cb_);
-    void async_get_slave(get_soc_callback cb_);
-
-private:
-    strand_ptr _ev_loop;
-    std::multimap<unsigned, conn_ptr> _master_pool;
-    std::multimap<unsigned, conn_ptr> _slave_pool;
-    std::mutex _pools_sync_mux;
-    void __p_insert(const std::string & ip_,
-                    unsigned port_,
-                    std::multimap<unsigned, conn_ptr> &target_,
-                    unsigned priority_ = 100);
-
-    conn_ptr __get_best_rand(std::multimap<unsigned, conn_ptr> &target_);
-};
+using conn_manager_ptr = std::shared_ptr<conn_manager>;
+//typedef threadsafe::ts_pool<conn_endpoint> master_pool;
+//typedef threadsafe::ts_pool<conn_endpoint> slave_pool;
 
 }
 #endif // CONN_POOL_HPP

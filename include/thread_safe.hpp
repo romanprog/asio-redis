@@ -176,43 +176,108 @@ public:
 };
 
 template <typename AllocT>
-class spool
+class list_balancer
 {
 public:
-    spool()
+
+    list_balancer(const std::vector<std::pair<AllocT, unsigned>> & _init_list)
     {
+        // Allocate memory for map (100 units max).
         _map = static_cast<unsigned char *>(malloc(1000));
+        // Randomize.
+        srand(time(0));
+        // Add units.
+        for (auto & unit : _init_list)
+            __add_unit(unit.first, unit.second);
+
     }
-    ~spool()
+
+    ~list_balancer()
     {
         free(_map);
     }
 
-    void add_unit(AllocT unit_, unsigned pref_)
+    const AllocT & balanced_rand() const
+    {
+        return _list[_map[rand() % (_map_size)]].first;
+    }
+
+    const bool empty() const
+    {
+        return _list.empty();
+    }
+
+    const bool size() const
+    {
+        return _list.size();
+    }
+
+    const std::vector<std::pair<AllocT, unsigned>> & get_list() const
+    {
+        return _list;
+    }
+
+protected:
+
+    list_balancer()
+    {
+        _map = static_cast<unsigned char *>(malloc(1000));
+
+        srand(time(0));
+
+    }
+
+    void __add_unit(AllocT unit_, unsigned pref_)
     {
         if (pref_ < 1 || pref_ > 10 )
-            throw std::logic_error("Priority value out of range (1-10).");
+            throw std::logic_error("Preference value out of range (1-10).");
 
-        std::lock_guard<std::mutex> lc(_rw_locker);
-        _spool.push_back(std::pair<unsigned, AllocT>(pref_, unit_));
-        unsigned last_index = _spool.size() - 1;
+        if (_list.size() >= 100)
+            throw std::logic_error("Pool units count out of range (max - 100).");
+
+        _list.push_back(std::pair<AllocT, unsigned>(unit_, pref_));
+        unsigned last_index = _list.size() - 1;
         for (int i = _map_size; i < _map_size + pref_; ++i)
             _map[i] = last_index;
 
          _map_size += pref_;
     }
-    const AllocT & rand_unit()
+
+private:
+    std::vector<std::pair<AllocT, unsigned>> _list;
+    unsigned _map_size {0};
+    unsigned char * _map {nullptr};
+};
+
+template <typename AllocT, typename LockT = std::mutex>
+class list_balancer_ext : public list_balancer<AllocT>
+{
+public:
+    list_balancer_ext()
+        : list_balancer<AllocT>::list_balancer()
+    {  }
+
+    list_balancer_ext(const std::vector<std::pair<AllocT, unsigned>> & _init_list)
+        : list_balancer<AllocT>::list_balancer(_init_list)
+
     {
-        return _spool[_map[rand() % (_map_size - 1)]].second;
+
+    }
+
+    void add_unit(AllocT unit_, unsigned pref_)
+    {
+        std::lock_guard<LockT> lc(_rw_locker);
+        this->__add_unit(unit_, pref_);
+    }
+
+    const AllocT & balanced_rand()
+    {
+        std::lock_guard<LockT> lc(_rw_locker);
+        return list_balancer<AllocT>::balanced_rand();
     }
 
 private:
-    std::vector<std::pair<unsigned, AllocT>> _spool;
-
-    std::mutex _rw_locker;
-    unsigned _map_size {0};
-    unsigned char * _map {nullptr};
-
+    LockT _rw_locker;
 };
 
 } //namespace threadsafe

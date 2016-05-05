@@ -9,11 +9,13 @@
 #include <mutex>
 #include <asio.hpp>
 
+#include "../utils/h_net.hpp"
+
 namespace redis {
 
 using rds_err = int;
 
-// Calculate max text length of unsigned value at compile time.
+// Calculate text length of unsigned value at compile time.
 template<unsigned long n>
 struct TLenCounter {
     enum { value = 1 + TLenCounter<n/10>::value };
@@ -57,6 +59,23 @@ struct resp_data
     }
 };
 
+struct srv_endpoint
+{
+    srv_endpoint(const std::string & ip_, unsigned port_, unsigned pref_ = 10)
+        : ip(ip_),
+          port(port_),
+          pref(pref_)
+    {  }
+
+    std::string ip;
+    unsigned port;
+    unsigned pref;
+    inline bool no_error() const
+    {
+        return (hnet::is_ip_v4(ip) && pref > 0 && pref <= 10);
+    }
+};
+
 using resp_data_ptr = std::unique_ptr<resp_data>;
 using RedisCallback = std::function<void (int, const resp_data &)>;
 using RedisCallbackQueue = std::queue<RedisCallback>;
@@ -66,6 +85,7 @@ using soc_ptr = std::shared_ptr<asio::ip::tcp::socket>;
 using strand_ptr = std::shared_ptr<asio::strand>;
 using conn_callback = std::function<void (asio::error_code&)>;
 using get_soc_callback = std::function<void (asio::error_code&, soc_ptr && result)>;
+using get_socs_list_callback = std::function<void (asio::error_code&, std::vector<soc_ptr> && result)>;
 
 } // namespace redis
 

@@ -44,6 +44,8 @@ private:
     void __resp_proc();
 };
 
+using serial_ptr = std::shared_ptr<serial>;
+
 } // namespace procs
 
 } // namespace redis

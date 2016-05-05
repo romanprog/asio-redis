@@ -1,110 +1,104 @@
 #include "../include/conn_pool.hpp"
 #include "../include/thread_safe.hpp"
 #include "../utils/h_net.hpp"
+#include "asio/steady_timer.hpp"
+#include <thread>
+#include <future>
 
 
 namespace redis {
 
-conn::conn(const strand_ptr & ev, std::string ip_, unsigned port_)
+conn_manager::conn_manager(const strand_ptr & ev, std::string ip_, unsigned port_)
     : _ev_loop(ev),
       _ip(std::move(ip_)),
       _port(port_)
 {  }
 
-void conn::get(get_soc_callback cb_)
+void conn_manager::async_get(get_soc_callback cb_, unsigned timeout_)
 {
-    soc_ptr soc;
+    soc_ptr soc_p;
     asio::error_code ec;
-    if (_cache.get_first_free(soc)) {
-        cb_(ec, std::move(soc));
+    if (_cache.get_first_free(soc_p)) {
+        cb_(ec, std::move(soc_p));
         return;
     }
 
-    soc = std::make_shared<asio::ip::tcp::socket>(_ev_loop->get_io_service());
+    soc_p = std::make_shared<asio::ip::tcp::socket>(_ev_loop->get_io_service());
+
+    std::shared_ptr<asio::steady_timer> conn_timer = std::make_shared<asio::steady_timer>(_ev_loop->get_io_service());
+
     asio::ip::address ip(asio::ip::address::from_string(_ip, ec));
     if (ec) {
         cb_(ec, nullptr);
         return;
     }
 
-    auto connection_handler = [this, cb_, soc](asio::error_code ec) mutable
+    auto connection_handler = [this, cb_, soc_p, conn_timer](asio::error_code ec) mutable
     {
         if (ec) {
             cb_(ec, nullptr);
+            conn_timer->cancel();
             return;
         }
-        cb_(ec, std::move(soc));
+        conn_timer->cancel();
+        _cache.push(soc_p);
+        cb_(ec, std::move(soc_p));
+    };
+
+    auto timeout_handler = [this, cb_, soc_p](asio::error_code ec) mutable
+    {
+        if (ec)
+            return;
+
+        ec.assign(asio::error::timed_out, asio::system_category());
+        soc_p->cancel();
+        cb_(ec, nullptr);
     };
 
     asio::ip::tcp::endpoint endpoint(ip, _port);
-    soc->async_connect(endpoint, _ev_loop->wrap(connection_handler));
+    soc_p->async_connect(endpoint, _ev_loop->wrap(connection_handler));
+    conn_timer->expires_from_now(std::chrono::seconds(timeout_));
+    conn_timer->async_wait(_ev_loop->wrap(timeout_handler));
 
 }
 
-
-conn_pool::conn_pool(strand_ptr ev)
-    :_ev_loop(ev)
+void conn_manager::async_get(get_socs_list_callback cb_, unsigned count_, unsigned timeout_)
 {
+    std::vector<soc_ptr> result;
 
+    __async_get_one(std::move(result), cb_, count_, timeout_);
 }
 
-void conn_pool::add_master(const std::string &ip_, unsigned port_, unsigned priority_)
+soc_ptr conn_manager::get(asio::error_code & err, unsigned timeout_)
 {
-    __p_insert(ip_, port_, _master_pool, priority_);
+    std::promise<soc_ptr> conn_prom;
+    std::future<soc_ptr> conn_fut = conn_prom.get_future();
+
+    auto conn_handler = [&conn_prom, &err] (asio::error_code ec_, soc_ptr soc_) {
+        err = ec_;
+        conn_prom.set_value(std::move(soc_));
+    };
+
+    async_get(conn_handler, timeout_);
+
+    conn_fut.wait();
+
+    return conn_fut.get();
 }
 
-void conn_pool::add_slave(const std::string &ip_, unsigned port_, unsigned priority_)
+void conn_manager::__async_get_one(std::vector<soc_ptr>&& result, get_socs_list_callback cb_, unsigned count_, unsigned timeout_)
 {
-    __p_insert(ip_, port_, _slave_pool, priority_);
-}
-
-void conn_pool::async_get_master(get_soc_callback cb_)
-{
-    conn_ptr best_rnd_cn = __get_best_rand(_master_pool);
-    best_rnd_cn->get(cb_);
-}
-
-void conn_pool::async_get_slave(get_soc_callback cb_)
-{
-    conn_ptr best_rnd_cn = __get_best_rand(_slave_pool);
-    best_rnd_cn->get(cb_);
-}
-
-void conn_pool::__p_insert(const std::string &ip_, unsigned port_, std::multimap<unsigned, conn_ptr> &target_, unsigned priority_)
-{
-    if (priority_ > 10 || priority_ < 1)
-        throw std::logic_error("Priority value out of range (1-100).");
-
-    if (!hnet::is_ip_v4(ip_))
-        throw std::logic_error("Invalid ip");
-
-    std::lock_guard<std::mutex> lock(_pools_sync_mux);
-    target_.insert({priority_, std::make_shared<conn>(_ev_loop, ip_, port_)});
-}
-
-conn_ptr conn_pool::__get_best_rand(std::multimap<unsigned, conn_ptr> &target_)
-{
-
-    conn_ptr best_res;
-    unsigned best_score {0};
-    srand(time(NULL));
-
-    std::lock_guard<std::mutex> lock(_pools_sync_mux);
-    if (_master_pool.empty())
-        throw std::logic_error("Spool is empty.");
-
-    for (auto rit = target_.rbegin(); rit != target_.rend(); ++rit)
+    auto conn_handler = [res = std::move(result), count_, cb_, timeout_](asio::error_code & ec, soc_ptr && res_soc) mutable
     {
-        unsigned bst_rnd = rand() % rit->first;
-        if (bst_rnd > best_score) {
-            best_score = bst_rnd;
-            best_res = rit->second;
+        if (ec) {
+            cb_(ec, std::vector<soc_ptr>());
+            return;
         }
-    }
+        res.push_back(res_soc);
 
-    return best_res;
+    };
+
 }
-
 
 
 } //namespace redis

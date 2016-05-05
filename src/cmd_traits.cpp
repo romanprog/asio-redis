@@ -40,7 +40,7 @@ const std::vector<std::string> cl_set_slot::name {"CLUSTER", "SETSLOT"};
 const std::vector<std::string> cl_slaves::name {"CLUSTER", "SLAVES"};
 
 } // namespace claster
-////////////////////////////////////////////////////////////////////////
+
 } // namespace cmd
 
 } // namespace redis

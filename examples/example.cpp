@@ -11,19 +11,21 @@
 #include "../include/asio-redis.hpp"
 
 int main () {
-    using namespace redis::threadsafe;
-    spool<int> sp;
-    sp.add_unit(0, 3);
-    sp.add_unit(1, 5);
-    sp.add_unit(2, 10);
-    std::vector<unsigned> res{0,0,0};
-    for (int i = 0; i < 1000; ++i)
-    {
-        // std::cout << sp.rand_unit() << std::endl;
-        ++res[sp.rand_unit()];
-    }
-    for (auto & i : res)
-        std::cout << i << std::endl;
+
+    asio::io_service io;
+    std::shared_ptr<asio::strand> _str_p = std::make_shared<asio::strand>(io);
+    std::vector<redis::srv_endpoint> master_pool;
+    std::vector<redis::srv_endpoint> slave_pool;
+    master_pool.emplace_back("127.0.0.1", 6379);
+    slave_pool.emplace_back("127.0.0.1", 6379);
+    redis::client cl;
+    cl.run_thread_worker();
+    std::future<asio::error_code> conn_f = cl.future_connect(master_pool, slave_pool);
+    conn_f.wait();
+    if (conn_f.get())
+        std::cout << "Bad!" <<std::endl;
+    else
+        std::cout << "Connected!" <<std::endl;
 
 
 }

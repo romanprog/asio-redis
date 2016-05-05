@@ -8,10 +8,10 @@ namespace redis {
 namespace buff {
 
 template <typename BaseBuffType>
-class adapter
+class output_adapter
 {
 public:
-    explicit adapter(const BaseBuffType & _buff)
+    explicit output_adapter(const BaseBuffType & _buff)
         :_base_buffer(_buff)
     {
 
@@ -53,8 +53,8 @@ public:
 
 private:
     // Delete copy and move constructors and assignment operators.
-    adapter(adapter &&) = delete;
-    adapter & operator= (adapter &&) = delete;
+    output_adapter(output_adapter &&) = delete;
+    output_adapter & operator= (output_adapter &&) = delete;
 
     const BaseBuffType & _base_buffer;
     size_t _sended_offset {0};

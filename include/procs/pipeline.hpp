@@ -47,6 +47,8 @@ private:
     void __resp_proc();
 };
 
+using pipeline_ptr = std::shared_ptr<pipeline>;
+
 } // namespace procs
 
 } // namespace redis

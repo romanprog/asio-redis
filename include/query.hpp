@@ -166,7 +166,7 @@ protected:
 
     template <typename T, typename ...Args, typename CT = CmdType, typename ST = StatusT,
               typename = std::enable_if_t<CT::enable_direct_send_buff && std::is_same<ST, buff::enable_direct_buff>::value>>
-    void _build_RESP_next(const redis::buff::adapter<T> & _direct_buff, Args && ...args)
+    void _build_RESP_next(const redis::buff::output_adapter<T> & _direct_buff, Args && ...args)
     {
         _build_RESP_next(_direct_buff);
         _build_RESP_next(std::forward<Args>(args)...);
@@ -174,7 +174,7 @@ protected:
 
     template <typename T, typename CT = CmdType, typename ST = StatusT,
               typename = std::enable_if_t<CT::enable_direct_send_buff && std::is_same<ST, buff::enable_direct_buff>::value>>
-    inline void _build_RESP_next(const redis::buff::adapter<T> & direct_buff_)
+    inline void _build_RESP_next(const redis::buff::output_adapter<T> & direct_buff_)
     {
         // query_pref_max_size + additional "/r/n"
         char pref[query_pref_max_size + 2];
@@ -186,7 +186,6 @@ protected:
                                                                         asio::buffer(direct_buff_.data(),
                                                                                      direct_buff_.size())));
     }
-
 };
 
 class serial_query_adapter
