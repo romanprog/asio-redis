@@ -40,6 +40,11 @@ void client::async_connect(const std::vector<srv_endpoint> &master_pool_,
 
 }
 
+void client::async_send(const std::string &query, RedisCallback cb_)
+{
+    _master_pipeline.balanced_rand()->push(query, cb_);
+}
+
 std::future<asio::error_code> client::future_connect(const std::vector<srv_endpoint> &master_pool_,
                                                      const std::vector<srv_endpoint> &slave_pool_)
 {
@@ -81,6 +86,12 @@ void client::reset_timer()
 client::~client()
 {
     _worked_time.cancel();
+
+    _master_pipeline.clear();
+    _slave_pipeline.clear();
+    _master_serial.clear();
+    _slave_serial.clear();
+
     _thread_worker.join();
 }
 

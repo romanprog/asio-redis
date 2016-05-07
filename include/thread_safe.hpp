@@ -243,6 +243,11 @@ protected:
          _map_size += pref_;
     }
 
+    void __claear()
+    {
+        _list.clear();
+    }
+
 private:
     std::vector<std::pair<AllocT, unsigned>> _list;
     unsigned _map_size {0};
@@ -274,6 +279,11 @@ public:
     {
         std::lock_guard<LockT> lc(_rw_locker);
         return list_balancer<AllocT>::balanced_rand();
+    }
+
+    void clear()
+    {
+        this->__claear();
     }
 
 private:

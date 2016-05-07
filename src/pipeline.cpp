@@ -12,7 +12,13 @@ pipeline::pipeline(strand_ptr main_loop_, soc_ptr &&soc_)
       _socket(std::move(soc_)),
       _reading_buff(_resp_parser.buff())
 {
+    __resp_proc();
+}
 
+pipeline::~pipeline()
+{
+    _socket->cancel();
+    _socket->close();
 }
 
 void pipeline::push(const std::string &query_, RedisCallback cb_)

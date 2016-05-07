@@ -19,7 +19,7 @@ class pipeline
 public:
 
     pipeline(strand_ptr main_loop_, soc_ptr && soc_);
-    ~pipeline() = default;
+    ~pipeline();
 
     void push(const std::string &query_, RedisCallback cb_);
 
@@ -35,7 +35,7 @@ private:
 
     std::mutex _send_buff_mux;
     std::atomic<bool> _req_proc_running {false};
-    std::atomic<bool> _stop_in_progress {true};
+    std::atomic<bool> _stop_in_progress {false};
 
     std::promise<void> _work_done_waiter;
 

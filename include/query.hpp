@@ -18,7 +18,7 @@ void add_query_part(std::string & query_, const char * part_);
 std::vector<asio::const_buffer> build_multibuffer(const std::string & query_,
                                                   const DBuffsPosList & _ext_buffs_list);
 
-template <class CmdType, typename StatusT = buff::disable_direct_buff>
+template <class CmdType>
 class  query
 {
 private:
@@ -89,9 +89,19 @@ public:
         _query += "\r\n";
     }
 
-    const std::string & get_query() const
+    const std::string & as_string_ref() const
     {
         return _query;
+    }
+
+    const char * qdata() const
+    {
+        return _query.c_str();
+    }
+
+    size_t qsize() const
+    {
+        return _query.size();
     }
 
     template <typename ...Args>
@@ -164,16 +174,16 @@ protected:
         _build_RESP_next(std::to_string(part_).c_str());
     }
 
-    template <typename T, typename ...Args, typename CT = CmdType, typename ST = StatusT,
-              typename = std::enable_if_t<CT::enable_direct_send_buff && std::is_same<ST, buff::enable_direct_buff>::value>>
+    template <typename T, typename ...Args, typename CT = CmdType,
+              typename = std::enable_if_t<CT::enable_direct_send_buff>>
     void _build_RESP_next(const redis::buff::output_adapter<T> & _direct_buff, Args && ...args)
     {
         _build_RESP_next(_direct_buff);
         _build_RESP_next(std::forward<Args>(args)...);
     }
 
-    template <typename T, typename CT = CmdType, typename ST = StatusT,
-              typename = std::enable_if_t<CT::enable_direct_send_buff && std::is_same<ST, buff::enable_direct_buff>::value>>
+    template <typename T, typename CT = CmdType,
+              typename = std::enable_if_t<CT::enable_direct_send_buff>>
     inline void _build_RESP_next(const redis::buff::output_adapter<T> & direct_buff_)
     {
         // query_pref_max_size + additional "/r/n"

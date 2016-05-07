@@ -33,6 +33,12 @@ public:
     void async_connect(const std::vector<srv_endpoint> & master_pool_,
                        const std::vector<srv_endpoint> & slave_pool_,
                        confirm_cb cb_);
+    void async_send(const std::string & query, RedisCallback cb_);
+    template <typename CmdType>
+    void async_send(const query<CmdType> & q_)
+    {
+
+    }
 
     std::future<asio::error_code> future_connect(const std::vector<srv_endpoint> & master_pool_,
                                                  const std::vector<srv_endpoint> & slave_pool_);
