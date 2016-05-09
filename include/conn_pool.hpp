@@ -1,7 +1,7 @@
 #ifndef CONN_POOL_HPP
 #define CONN_POOL_HPP
 #include "types.hpp"
-#include "thread_safe.hpp"
+#include "threadsafe/conn_queue.hpp"
 #include "unordered_map"
 
 #include <asio.hpp>

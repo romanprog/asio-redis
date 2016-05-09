@@ -3,7 +3,7 @@
 
 #include "../query.hpp"
 #include "../proto.hpp"
-#include "../thread_safe.hpp"
+#include "../threadsafe/conn_queue.hpp"
 #include "../buffers/io_buffers.hpp"
 
 #include <mutex>

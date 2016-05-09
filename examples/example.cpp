@@ -10,6 +10,8 @@
 
 #include "../include/asio-redis.hpp"
 
+std::chrono::high_resolution_clock::time_point t_begin, t_end;
+
 int main () {
 
 
@@ -21,18 +23,28 @@ int main () {
     cl.run_thread_worker();
     std::future<asio::error_code> conn_f = cl.future_connect(master_pool, slave_pool);
     conn_f.wait();
-
-    auto query_handler = [](redis::rds_err er_, const redis::resp_data & result)
-    {
-        std::cout << result.sres << std::endl;
-    };
-
-    cl.async_send("get stest", query_handler);
-
     if (conn_f.get())
         std::cout << "Bad!" <<std::endl;
     else
         std::cout << "Connected!" <<std::endl;
+
+    auto query_handler = [](redis::rds_err er_, const redis::resp_data & result)
+    {
+        if (result.ires == 1000000) {
+            t_end = std::chrono::high_resolution_clock::now();
+            std::chrono::high_resolution_clock::duration tm   = t_end - t_begin;
+            std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(tm).count() << std::endl;
+        }
+    };
+
+    t_begin = std::chrono::high_resolution_clock::now();
+
+    cl.async_send("set test 0", query_handler);
+
+    for (int i = 0; i < 1000000; ++i)
+        cl.async_send("incr test", query_handler);
+
+
     std::this_thread::sleep_for(std::chrono::seconds(2));
     int i = 1000;
 

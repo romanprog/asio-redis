@@ -4,7 +4,7 @@
 #include <thread>
 #include <asio/steady_timer.hpp>
 
-#include "thread_safe.hpp"
+#include "threadsafe/conn_queue.hpp"
 #include "conn_pool.hpp"
 #include "procs/pipeline.hpp"
 #include "procs/serial.hpp"
