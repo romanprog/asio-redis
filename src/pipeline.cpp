@@ -94,12 +94,12 @@ void pipeline::__resp_proc()
 
           while (_resp_parser.parse_one(_respond))
           {
-              // Critical error. Answer resived, but no one callback in queue.
-              if (_cb_queue.empty())
-                  throw std::logic_error("No one callbacks(11). Query/resp processors sync error.");
 
+              RedisCallback cb;
               // Call client function.
-              _cb_queue.call_and_pop(0, _respond);
+              if (!_cb_queue.try_pop(cb))
+                  throw std::logic_error("No one callbacks(11). Query/resp processors sync error.");
+              cb(1, _respond);
 
               if (_stop_in_progress && _cb_queue.empty())
                   work_done_report();

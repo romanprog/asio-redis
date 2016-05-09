@@ -32,7 +32,7 @@ public:
     const AllocT & balanced_rand()
     {
         std::lock_guard<LockT> lc(_rw_locker);
-        return this->balanced_rand();
+        return list_balancer<AllocT>::balanced_rand();
     }
 
     void clear()

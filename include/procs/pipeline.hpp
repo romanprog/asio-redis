@@ -4,6 +4,7 @@
 #include "../query.hpp"
 #include "../proto.hpp"
 #include "../threadsafe/threadsafe.hpp"
+#include "../threadsafe/tests_lab.hpp"
 #include "../buffers/io_buffers.hpp"
 
 #include <mutex>
@@ -31,8 +32,8 @@ private:
     output_buff _sending_buff;
     redis::resp_data _respond;
 
-    threadsafe::functors_queue<void (int, const resp_data &)> _cb_queue;
-
+    // threadsafe::functors_queue<void (int, const resp_data &)> _cb_queue;
+    threadsafe::lab::queue_fast<RedisCallback, std::mutex, redis::threadsafe::spin_lock> _cb_queue;
     std::mutex _send_buff_mux;
     std::atomic<bool> _req_proc_running {false};
     std::atomic<bool> _stop_in_progress {false};

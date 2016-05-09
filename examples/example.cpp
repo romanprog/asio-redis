@@ -9,12 +9,14 @@
 #include <thread>
 
 #include "../include/asio-redis.hpp"
+#include "../include/threadsafe/tests_lab.hpp"
 
 std::chrono::high_resolution_clock::time_point t_begin, t_end;
 
 int main () {
 
 
+#if 1
     std::vector<redis::srv_endpoint> master_pool;
     std::vector<redis::srv_endpoint> slave_pool;
     master_pool.emplace_back("127.0.0.1", 6379);
@@ -46,6 +48,48 @@ int main () {
 
 
     std::this_thread::sleep_for(std::chrono::seconds(2));
-    int i = 1000;
 
+#endif
+    exit(0);
+    redis::threadsafe::lab::queue_fast<int, std::mutex, redis::threadsafe::spin_lock> int_queue2;
+    redis::threadsafe::queue<int> int_queue;
+    redis::threadsafe::lab::queue_fast<int> int_queue1;
+    srand(time(NULL));
+
+    auto filler = [&int_queue]()
+    {
+        for (int i = 0; i < 1000000; ++i) {
+            int_queue.push(i);
+        }
+    };
+
+    auto poper = [&int_queue]()
+    {
+        int pop_data;
+        for (int i = 0; i < 1000000; ++i) {
+            int_queue.get_and_pop(pop_data);
+        }
+    };
+
+    t_begin = std::chrono::high_resolution_clock::now();
+    std::thread t1{filler};
+    filler();
+    std::thread t2{poper};
+    std::thread t3{poper};
+    t1.join();
+    t2.join();
+    t3.join();
+
+    t_end = std::chrono::high_resolution_clock::now();
+    std::chrono::high_resolution_clock::duration tm   = t_end - t_begin;
+    std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(tm).count() << std::endl;
+    t_begin = std::chrono::high_resolution_clock::now();
+
+    t_end = std::chrono::high_resolution_clock::now();
+    tm   = t_end - t_begin;
+    std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(tm).count() << std::endl;
 }
+
+
+
+
