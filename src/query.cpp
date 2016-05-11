@@ -1,6 +1,7 @@
 #include <string>
 #include <cstring>
 #include <vector>
+#include <iostream>
 
 #include "../include/types.hpp"
 
@@ -39,10 +40,13 @@ std::vector<asio::const_buffer> build_multibuffer(const std::string &query_, con
     size_t prev_pos {0};
     for (auto & pos : ext_buffs_list_)
     {
+//        std::cout << std::string(query_.data() + prev_pos, pos.first - prev_pos);
+
         res.push_back(asio::buffer(query_.data() + prev_pos, pos.first - prev_pos));
         res.push_back(pos.second);
         prev_pos = pos.first;
     }
+//    std::cout << std::string(query_.data() + prev_pos, query_.size() - prev_pos);
     res.push_back(asio::buffer(query_.data() + prev_pos, query_.size() - prev_pos));
     return res;
 }

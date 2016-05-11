@@ -21,7 +21,8 @@ client::client(strand_ptr strand_)
 
 void client::async_connect(const std::string &ip_, unsigned port_, confirm_cb cb_)
 {
-
+    _master_pool.add_unit(std::make_shared<conn_manager>(_ev_loop, ip_, port_), 10);
+    __ainit_mpipeline_pool(cb_);
 }
 
 
@@ -42,7 +43,7 @@ void client::async_connect(const std::vector<srv_endpoint> &master_pool_,
 
 void client::async_send(const std::string &query, RedisCallback cb_)
 {
-    _master_pipeline.balanced_rand()->push(query, cb_);
+    _master_pipeline.balanced_rand()->push(cb_, query);
 }
 
 std::future<asio::error_code> client::future_connect(const std::vector<srv_endpoint> &master_pool_,
@@ -97,6 +98,11 @@ client::~client()
 
 void client::__ainit_mpipeline_pool(confirm_cb cb_, unsigned unit_num)
 {
+    if (_master_pool.empty()) {
+        __ainit_spipeline_pool(cb_);
+        return;
+    }
+
     conn_manager_ptr cm_tmp = _master_pool.get_list()[unit_num].first;
     unsigned pref = _master_pool.get_list()[unit_num].second;
 
@@ -108,7 +114,6 @@ void client::__ainit_mpipeline_pool(confirm_cb cb_, unsigned unit_num)
         }
 
         _master_pipeline.add_unit(std::make_shared<procs::pipeline>(_ev_loop, std::move(result)), pref);
-
         if (unit_num == _master_pool.size() - 1) {
             __ainit_spipeline_pool(cb_);
             return;
@@ -120,6 +125,12 @@ void client::__ainit_mpipeline_pool(confirm_cb cb_, unsigned unit_num)
 
 void client::__ainit_spipeline_pool(confirm_cb cb_, unsigned unit_num)
 {
+
+    if (_slave_pool.empty()) {
+        __ainit_mserial_pool(cb_);
+        return;
+    }
+
     conn_manager_ptr cm_tmp = _slave_pool.get_list()[unit_num].first;
     unsigned pref = _slave_pool.get_list()[unit_num].second;
 
@@ -143,6 +154,11 @@ void client::__ainit_spipeline_pool(confirm_cb cb_, unsigned unit_num)
 
 void client::__ainit_mserial_pool(confirm_cb cb_, unsigned unit_num)
 {
+    if (_master_pool.empty()) {
+        __ainit_sserial_pool(cb_);
+        return;
+    }
+
     conn_manager_ptr cm_tmp = _master_pool.get_list()[unit_num].first;
     unsigned pref = _master_pool.get_list()[unit_num].second;
 
@@ -166,6 +182,12 @@ void client::__ainit_mserial_pool(confirm_cb cb_, unsigned unit_num)
 
 void client::__ainit_sserial_pool(confirm_cb cb_, unsigned unit_num)
 {
+
+    if (_slave_pool.empty()) {
+        cb_(asio::error_code());;
+        return;
+    }
+
     conn_manager_ptr cm_tmp = _slave_pool.get_list()[unit_num].first;
     unsigned pref = _slave_pool.get_list()[unit_num].second;
 

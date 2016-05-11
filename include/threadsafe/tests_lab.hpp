@@ -6,6 +6,7 @@
 #include <queue>
 #include <atomic>
 
+#include "../buffers/buff_abstract.hpp"
 #include "spin_lock.hpp"
 
 /// ////////////////////////////////////////////////////
@@ -17,7 +18,7 @@ namespace redis {
 namespace threadsafe {
 namespace lab {
 
-template <typename T, typename HeadLockT = std::mutex, typename TailLockT = std::mutex>
+template <typename T, typename HeadLockT = std::mutex, typename TailLockT = redis::threadsafe::spin_lock>
 class queue_fast
 {
 public:
@@ -179,6 +180,54 @@ private:
 
 
 };
+
+class output_buff : public buff_abstract
+{
+public:
+    output_buff();
+    // Return true if all contained data already sended (and confirmed).
+    bool nothing_to_send()
+    {
+        return top_offset() <= _sended_offset;
+    }
+
+    // Confirm data part (@bytes_sended size) sending.
+    void sending_report(size_t bytes_sended)
+    {
+        _sended_offset += bytes_sended;
+
+        if (nothing_to_send())
+            manage_mem();
+    }
+
+    // Pointer to begining of new (not sended) data
+    const char * new_data()
+    {
+            return data() + _sended_offset;
+    }
+
+    // Size of new (not sended) data.
+    size_t new_data_size()
+    {
+            return top_offset() - _sended_offset;
+    }
+
+    // Add new query tu buffer line.
+    void add_query(const std::string &query)
+    {
+        *this << query;
+        *this << "\r\n";
+    }
+
+private:
+    // Memory management: cleaning, fast reset, data transfer on free sites
+    // to avoid the appearance of a new memory.
+    void manage_mem();
+    size_t _sended_offset {0};
+
+};
+
+
 
 } // namespace lab
 } // namespace ts

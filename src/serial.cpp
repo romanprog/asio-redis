@@ -69,6 +69,7 @@ void serial::__resp_proc()
               _query_queue.pop();
 
           }
+          _proc_running.store(false);
           __proc_manager();
     };
 

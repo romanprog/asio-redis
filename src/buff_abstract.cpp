@@ -40,18 +40,13 @@ void *buff_abstract::vdata()
 
 bool buff_abstract::accept(size_t bytes_readed)
 {
-    if (bytes_readed > size_avail())
-        return false;
-
     _top_offset += bytes_readed;
-
-    when_new_data_acc(bytes_readed);
     return true;
 }
 
 void buff_abstract::release(size_t size)
 {
-    if (_size > 80000000)
+    if (_size + size > 80000000)
         throw std::out_of_range("Buffer overflow. Max - 80Mb");
 
     if (size < size_avail())
@@ -64,11 +59,6 @@ void buff_abstract::release(size_t size)
         _cdata = static_cast<char *>(realloc(_cdata, _reserved));
     }
     _size = _top_offset + size;
-
-    if (_size == _top_offset) {
-        return;
-    }
-
 }
 
 size_t buff_abstract::size_filled() const
@@ -124,11 +114,6 @@ size_t buff_abstract::calculate_mem(size_t block_size)
     size_t reserve_bl_count {2};
     // Base mem reserv calculate. 1 block for data needeng + 1 free block.
     return ((_top_offset + size_filled()) / block_size + reserve_bl_count) * block_size;
-}
-
-void buff_abstract::when_new_data_acc(size_t bytes_readed)
-{
-
 }
 
 void buff_abstract::when_reseted()

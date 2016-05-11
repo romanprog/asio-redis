@@ -34,10 +34,18 @@ public:
                        const std::vector<srv_endpoint> & slave_pool_,
                        confirm_cb cb_);
     void async_send(const std::string & query, RedisCallback cb_);
-    template <typename CmdType>
-    void async_send(const query<CmdType> & q_)
-    {
 
+    // Standart query only master.
+    template <typename CmdType>
+    void async_send(const query<CmdType, buff::common_buffer> & q_)
+    {
+        async_send_pipe(q_, typename CmdType::only_master_t());
+    }
+
+    template <typename CmdType>
+    void async_send(const query<CmdType, buff::direct_write_buffer> & q_)
+    {
+        async_send_serial(q_, typename CmdType::only_master_t());
     }
 
     std::future<asio::error_code> future_connect(const std::vector<srv_endpoint> & master_pool_,
@@ -66,6 +74,42 @@ private:
     void __ainit_spipeline_pool(confirm_cb cb_, unsigned unit_num = 0);
     void __ainit_mserial_pool(confirm_cb cb_, unsigned unit_num = 0);
     void __ainit_sserial_pool(confirm_cb cb_, unsigned unit_num = 0);
+
+    template <typename CmdType>
+    void async_send_pipe(const query<CmdType> & q_, std::true_type)
+    {
+        if (_master_pipeline.empty())
+            throw std::logic_error("Master pipeline is empty.");
+
+        _master_pipeline.balanced_rand()->push(q_.get_callback(), q_.as_string_ref());
+    }
+
+    template <typename CmdType>
+    void async_send_pipe(const query<CmdType> & q_, std::false_type)
+    {
+        if (_slave_pipeline.empty())
+            _master_pipeline.balanced_rand()->push(q_.get_callback(), q_.as_string_ref());
+        else
+            _slave_pipeline.balanced_rand()->push(q_.get_callback(), q_.as_string_ref());
+    }
+
+    template <typename CmdType, typename BType>
+    void async_send_serial(const query<CmdType, BType> & q_, std::true_type)
+    {
+        if (_master_serial.empty())
+            throw std::logic_error("Master serial is empty.");
+
+        _master_serial.balanced_rand()->push(q_);
+    }
+
+    template <typename CmdType, typename BType>
+    void async_send_serial(const query<CmdType, BType> & q_, std::false_type)
+    {
+        if (_slave_serial.empty())
+            _master_serial.balanced_rand()->push(q_);
+        else
+            _slave_serial.balanced_rand()->push(q_);
+    }
 
 
 };

@@ -52,7 +52,7 @@ output_buff::output_buff()
 
 bool output_buff::nothing_to_send()
 {
-    return top_offset() <= _sended_offset;
+    return top_offset() <= _sended_offset.load();
 }
 
 void output_buff::sending_report(size_t bytes_sended)
@@ -65,26 +65,28 @@ void output_buff::sending_report(size_t bytes_sended)
 
 const char *output_buff::new_data()
 {
-    return data() + _sended_offset;
+    return data() + _sended_offset.load();
 }
 
 size_t output_buff::new_data_size()
 {
-    return top_offset() - _sended_offset;
+    return top_offset() - _sended_offset.load();
 }
 
-bool output_buff::add_query(const std::string &query)
+void output_buff::add_query(const std::string &query)
 {
+//    release(query.size() + 2);
+//    memcpy(data_top(), query.data(), query.size());
+//    memcpy(static_cast<char*>(data_top()) + query.size(), "\r\n", 2);
+//    accept(query.size() + 2);
     *this << query;
-    *this << "\r\n";
 
-    return true;
 }
 
 void output_buff::manage_mem()
 {
     reset(true);
-    _sended_offset = 0;
+    _sended_offset.store(0);
 }
 
 

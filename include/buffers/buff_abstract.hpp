@@ -4,6 +4,7 @@
 #include <cstring>
 #include <string>
 #include <vector>
+#include <atomic>
 
 class buff_abstract
 {
@@ -58,7 +59,6 @@ public:
 
 protected:
     virtual size_t calculate_mem(size_t block_size);
-    virtual void when_new_data_acc(size_t bytes_readed);
     virtual void when_reseted();
     size_t top_offset() const;
     void change_data_top(size_t new_data_top);
@@ -66,7 +66,7 @@ protected:
 
 private:
     size_t _basic_block_size {1024};
-    size_t _top_offset {0};
+    std::atomic<size_t> _top_offset {0};
     size_t _reserved {0};
     size_t _size {0};
     char * _cdata;

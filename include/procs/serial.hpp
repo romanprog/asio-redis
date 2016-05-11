@@ -20,8 +20,8 @@ public:
 
     serial(strand_ptr main_loop_, soc_ptr && soc_);
     ~serial() = default;
-    template <typename T>
-    void push(const query<T> & q_)
+    template <typename T, typename BuffType>
+    void push(const query<T, BuffType> & q_)
     {
          _query_queue.push(serial_query_adapter(q_));
          __proc_manager();

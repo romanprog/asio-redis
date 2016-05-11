@@ -43,7 +43,7 @@ public:
         return _list.empty();
     }
 
-    const bool size() const
+    const size_t size() const
     {
         return _list.size();
     }

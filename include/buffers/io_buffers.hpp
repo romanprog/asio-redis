@@ -42,13 +42,13 @@ public:
     // Size of new (not sended) data.
     size_t new_data_size();
     // Add new query tu buffer line.
-    bool add_query(const std::string &query);
+    void add_query(const std::string &query);
 
 private:
     // Memory management: cleaning, fast reset, data transfer on free sites
     // to avoid the appearance of a new memory.
     void manage_mem();
-    size_t _sended_offset {0};
+    std::atomic<size_t> _sended_offset {0};
 
 };
 

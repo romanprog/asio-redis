@@ -13,7 +13,9 @@ struct default_traits
     static constexpr bool enable_direct_send_buff {false};
     static constexpr bool enable_direct_recive_buff {false};
     static constexpr bool no_params {false};
+    static constexpr bool only_master{true};
     using return_type = resp_data;
+    using only_master_t = std::true_type;
 };
 /// //////////////////  CLUSTER COMMANDS //////////////////////////////
 namespace cluster {
@@ -178,6 +180,13 @@ struct one_line : public default_traits
 struct set : public default_traits
 {
     static constexpr auto name {"set"};
+    static constexpr bool enable_direct_send_buff {true};
+    using only_master_t = std::true_type;
+};
+
+struct incr : public default_traits
+{
+    static constexpr auto name {"incr"};
 };
 
 struct get : public default_traits
@@ -196,15 +205,16 @@ struct blpop : public default_traits
 // tmp
 namespace buff {
 
-
-struct enable_direct_buff
+struct common_buffer
 {
-
 };
 
-struct disable_direct_buff
+struct direct_read_buffer
 {
+};
 
+struct direct_write_buffer
+{
 };
 
 } // namespace buuf

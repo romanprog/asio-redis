@@ -11,15 +11,15 @@ template <typename BaseBuffType>
 class output_adapter
 {
 public:
-    explicit output_adapter(const BaseBuffType & _buff)
-        :_base_buffer(_buff)
+    explicit output_adapter(std::shared_ptr<BaseBuffType> _buff)
+        :_base_buffer(std::move(_buff))
     {
 
     }
     // Return true if all contained data already sended (and confirmed).
     bool nothing_to_send() const
     {
-        return _sended_offset >= _base_buffer.size();
+        return _sended_offset >= _base_buffer->size();
     }
 
     // Confirm data part (@bytes_sended size) sending.
@@ -31,24 +31,24 @@ public:
     // Pointer to begining of new (not sended) data
     const char * new_data() const
     {
-        return static_cast<const char *>(_base_buffer.data() + _sended_offset);
+        return static_cast<const char *>(_base_buffer->data() + _sended_offset);
     }
 
     const char * data() const
     {
-        return static_cast<const char *>(_base_buffer.data());
+        return static_cast<const char *>(_base_buffer->data());
     }
 
     // Size of new (not sended) data.
     size_t new_data_size() const
     {
-        return _base_buffer.size() - _sended_offset;
+        return _base_buffer->size() - _sended_offset;
     }
 
 
     size_t size() const
     {
-        return _base_buffer.size();
+        return _base_buffer->size();
     }
 
 private:
@@ -56,7 +56,7 @@ private:
     output_adapter(output_adapter &&) = delete;
     output_adapter & operator= (output_adapter &&) = delete;
 
-    const BaseBuffType & _base_buffer;
+    std::shared_ptr<BaseBuffType> _base_buffer;
     size_t _sended_offset {0};
 };
 
