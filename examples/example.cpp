@@ -36,6 +36,7 @@ int main () {
     hstrings::rand_str(*_direct_buff, 1000);
     buff::output_adapter<std::string> _adapted_buffer(_direct_buff);
     query<cmd::incr> _set_cmd(buff_q_handler, "test");
+    query<cmd::hash::hexists> test_query(buff_q_handler, "test");
     query<cmd::set, buff::direct_write_buffer> dw_q(buff_q_handler, "test_test", _adapted_buffer);
 
 

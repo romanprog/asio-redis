@@ -35,7 +35,7 @@ public:
                        confirm_cb cb_);
     void async_send(const std::string & query, RedisCallback cb_);
 
-    // Standart query only master.
+
     template <typename CmdType>
     void async_send(const query<CmdType, buff::common_buffer> & q_)
     {
@@ -46,6 +46,18 @@ public:
     void async_send(const query<CmdType, buff::direct_write_buffer> & q_)
     {
         async_send_serial(q_, typename CmdType::only_master_t());
+    }
+
+    template <typename CmdType>
+    void async_send_master(const query<CmdType, buff::common_buffer> & q_)
+    {
+        async_send_pipe(q_, std::true_type());
+    }
+
+    template <typename CmdType>
+    void async_send_master(const query<CmdType, buff::direct_write_buffer> & q_)
+    {
+        async_send_serial(q_, std::true_type());
     }
 
     std::future<asio::error_code> future_connect(const std::vector<srv_endpoint> & master_pool_,
