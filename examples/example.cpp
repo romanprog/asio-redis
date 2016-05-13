@@ -11,6 +11,7 @@
 #include "../include/asio-redis.hpp"
 #include "../include/threadsafe/tests_lab.hpp"
 #include "../utils/h_strings.hpp"
+#include "../utils/profiler.hpp"
 
 std::chrono::high_resolution_clock::time_point t_begin, t_end;
 std::atomic<int> qcounter{0};
@@ -29,6 +30,10 @@ int main () {
             long mls = std::chrono::duration_cast<std::chrono::milliseconds>(tm).count();
             double qps = loops_count*1000/(mls?mls:mls+1);
             std::cout << "Loops: " << loops_count  << ", time: " << mls << "ms, " << qps << "qps" << std::endl;
+            for (auto & tp : profiler::global().get_list())
+            {
+                std::cout << tp.first << " " << tp.second << std::endl;
+            }
         }
     };
     using namespace redis;
@@ -37,19 +42,13 @@ int main () {
     buff::output_adapter<std::string> _adapted_buffer(_direct_buff);
     query<cmd::incr> _set_cmd(buff_q_handler, "test");
     query<cmd::hash::hexists> test_query(buff_q_handler, "test");
-    query<cmd::set, buff::direct_write_buffer> dw_q(buff_q_handler, "test_test", _adapted_buffer);
+    query<cmd::incr, buff::direct_write_buffer> dw_q(buff_q_handler, "test");
 
 
 #if 1
-    std::vector<redis::srv_endpoint> master_pool;
-    std::vector<redis::srv_endpoint> slave_pool;
-    master_pool.emplace_back("127.0.0.1", 6379);
-    master_pool.emplace_back("127.0.0.1", 6379);
-    master_pool.emplace_back("127.0.0.1", 6379);
-//    slave_pool.emplace_back("127.0.0.1", 6379);
     redis::client cl;
     cl.run_thread_worker();
-    std::future<asio::error_code> conn_f = cl.future_connect(master_pool, slave_pool);
+    std::future<asio::error_code> conn_f = cl.future_connect("127.0.0.1", 6379);
     conn_f.wait();
 
 
@@ -64,14 +63,14 @@ int main () {
         // std::shared_ptr<std::string> _direct_buff = std::make_shared<std::string>();
         // hstrings::rand_str(*_direct_buff, 1000);
         // buff::output_adapter<std::string> _adapted_buffer(_direct_buff);
-        cl.async_send(query<cmd::set> (buff_q_handler, "text_test", "1000000000000"));
+        cl.async_send(dw_q);
     }
 //        cl.async_send(dw_q);
 
     // cl.async_send(dw_q);
 
 //    t11.join();
-    std::this_thread::sleep_for(std::chrono::seconds(3));
+    std::this_thread::sleep_for(std::chrono::seconds(6));
 
 #endif
     exit(0);

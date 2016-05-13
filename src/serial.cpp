@@ -17,6 +17,7 @@ serial::serial(strand_ptr main_loop_, soc_ptr &&soc_)
 
 void serial::__req_poc()
 {
+    //profiler::global().startpoint();
     auto req_handler = [this](std::error_code ec, std::size_t bytes_sent)
     {
         if (ec) {
@@ -26,6 +27,7 @@ void serial::__req_poc()
             _proc_running.store(false);
             __proc_manager();
         }
+        //profiler::global().checkpoint("req");
         __resp_proc();
    };
 
@@ -56,6 +58,7 @@ void serial::__resp_proc()
 
           _reading_buff.accept(bytes_sent);
 
+          //profiler::global().checkpoint("resp");
 
           if (!_resp_parser.parse_one(_respond))  {
               __resp_proc();
@@ -69,6 +72,7 @@ void serial::__resp_proc()
               _query_queue.pop();
 
           }
+          //profiler::global().checkpoint("parse");
           _proc_running.store(false);
           __proc_manager();
     };
@@ -76,6 +80,79 @@ void serial::__resp_proc()
     _socket->async_read_some(asio::buffer(_reading_buff.data_top(), _reading_buff.size_avail()), _ev_loop->wrap(resp_handler));
 }
 
+/// /////////////////// Async serial /////////////////////////
+
+async_serial::async_serial(strand_ptr main_loop_, soc_ptr &&soc_)
+    : _ev_loop(main_loop_),
+      _socket(std::move(soc_)),
+      _reading_buff(_resp_parser.buff())
+
+{
+        __resp_proc();
+}
+
+void async_serial::__req_poc()
+{
+    //profiler::global().startpoint();
+    auto req_handler = [this](std::error_code ec, std::size_t bytes_sent)
+    {
+        if (ec) {
+            resp_data ret;
+            RedisCallback cb;
+            // Call client function.
+            if (!_cb_queue.try_pop(cb))
+                throw std::logic_error("No one callbacks. Query/resp async_serial processors sync error.");
+            cb(ec.value(), ret);
+        }
+        _query_queue.pop();
+        _proc_running.store(false);
+        __proc_manager();
+   };
+//    profiler::global().startpoint();
+    _socket->async_write_some(_query_queue.front().get_multibuffer(), _ev_loop->wrap(req_handler));
+//    profiler::global().checkpoint("send_data");
+}
+
+void async_serial::__proc_manager()
+{
+    bool cmp_tmp {false};
+
+    if (_proc_running.compare_exchange_strong(cmp_tmp, true, std::memory_order_release, std::memory_order_relaxed))
+    {
+        if (_query_queue.empty()) {
+            _proc_running.store(false);
+            return;
+        }
+        __req_poc();
+    }
+}
+
+void async_serial::__resp_proc()
+{
+    _reading_buff.release(2048);
+    auto resp_handler = [this](std::error_code ec, std::size_t bytes_sent)
+    {
+          if (ec)
+              return;
+
+          _reading_buff.accept(bytes_sent);
+
+          //profiler::global().checkpoint("resp");
+
+          while (_resp_parser.parse_one(_respond))  {
+              resp_data ret;
+              RedisCallback cb;
+              // Call client function.
+              if (!_cb_queue.try_pop(cb))
+                  throw std::logic_error("No one callbacks. Query/resp async_serial processors sync error.");
+              cb(0, _respond);
+          }
+          __resp_proc();
+    };
+    profiler::global().startpoint();
+    _socket->async_read_some(asio::buffer(_reading_buff.data_top(), _reading_buff.size_avail()), _ev_loop->wrap(resp_handler));
+    profiler::global().checkpoint("rcv_data");
+}
 
 
 } // namespace procs

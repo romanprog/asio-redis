@@ -234,6 +234,11 @@ public:
         return build_multibuffer(*_query, _ext_buffs_list);
     }
 
+    const std::string & as_str_ref() const
+    {
+        return *_query;
+    }
+
 };
 
 } // namespace redis

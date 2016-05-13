@@ -99,6 +99,7 @@ void pipeline::__resp_proc()
               // Call client function.
               if (!_cb_queue.try_pop(cb))
                   throw std::logic_error("No one callbacks(11). Query/resp processors sync error.");
+
               cb(1, _respond);
 
               if (_stop_in_progress && _cb_queue.empty())

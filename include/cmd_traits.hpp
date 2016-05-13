@@ -285,7 +285,7 @@ struct hsetnx: public default_traits
 };
 
 // HSTRLEN key field
-struct hsetnx: public default_traits
+struct hstrlen: public default_traits
 {
     using only_master_t = std::false_type;
     static constexpr auto name {"HSTRLEN"};
@@ -385,7 +385,7 @@ struct move: public default_traits
 };
 
 // OBJECT subcommand [arguments [arguments ...]]
-struct exists: public default_traits
+struct object: public default_traits
 {
     using only_master_t = std::false_type;
     static constexpr auto name {"OBJECT"};
@@ -454,7 +454,26 @@ struct sort: public default_traits
     static constexpr auto name {"SORT"};
 };
 
+// TTL key
+struct ttl: public default_traits
+{
+    using only_master_t = std::false_type;
+    static constexpr auto name {"TTL"};
+};
 
+// TYPE key
+struct type: public default_traits
+{
+    using only_master_t = std::false_type;
+    static constexpr auto name {"TYPE"};
+};
+
+// WAIT numslaves timeout
+struct wait: public default_traits
+{
+    static constexpr bool is_blocking {true};
+    static constexpr auto name {"TYPE"};
+};
 
 }
 
@@ -491,6 +510,7 @@ struct set : public default_traits
 
 struct incr : public default_traits
 {
+    static constexpr bool enable_direct_send_buff {true};
     static constexpr auto name {"incr"};
 };
 
