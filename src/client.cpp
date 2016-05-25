@@ -90,23 +90,6 @@ std::future<asio::error_code> client::future_connect(const std::string &master_i
     return prom_ptr->get_future();
 }
 
-std::future<resp_data> client::future_send(const std::string &query)
-{
-    std::shared_ptr<std::promise<resp_data>> prom_ptr = std::make_shared<std::promise<resp_data>>();
-    auto query_handler = [prom_ptr](int ec, const resp_data & result) mutable
-    {
-        if (ec)
-            prom_ptr->set_value(resp_data());
-        else
-            prom_ptr->set_value(result);
-
-    };
-
-    async_send(query, query_handler);
-    return prom_ptr->get_future();
-}
-
-
 
 void client::run_thread_worker()
 {

@@ -11,8 +11,9 @@ template <typename BaseBuffType>
 class output_adapter
 {
 public:
-    explicit output_adapter(std::shared_ptr<BaseBuffType> _buff)
-        :_base_buffer(std::move(_buff))
+    template <typename ...Args>
+    explicit output_adapter(Args... args)
+        :_base_buffer(std::make_shared<BaseBuffType>(std::forward<Args>(args)...))
     {
 
     }
@@ -49,6 +50,11 @@ public:
     size_t size() const
     {
         return _base_buffer->size();
+    }
+
+    BaseBuffType & get_ref()
+    {
+        return *_base_buffer.get();
     }
 
 private:

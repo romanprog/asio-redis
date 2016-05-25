@@ -24,18 +24,6 @@ int main () {
     using namespace redis;
 
 
-//    profiler::global().startpoint();
-//    for (int i = 0; i < loops_count; ++i) {
-//        query<cmd::set> get_test(empty_handler, "any", "some text");
-//    }
-
-/*    profiler::global().checkpoint("qcreate");
-    double mls = profiler::global().get_duration("qcreate");
-    double qps = (static_cast<double>(loops_count)/(mls?mls:mls+1))*1000000;
-    std::cout << "Loops: " << loops_count  << ", time: " << mls << "mks, " << qps << "cps" << std::endl;
-
-    exit(0)*/;
-
     auto buff_q_handler = [](redis::rds_err er, const redis::resp_data & res)
     {
         ++qcounter;
@@ -50,11 +38,13 @@ int main () {
     };
     query<cmd::cluster::cl_countkeysinslot> ds("sadasd");
     std::cout << ds.as_string_ref() << std::endl;
-    exit(0);
+    // exit(0);
 
     std::shared_ptr<std::string> _direct_buff = std::make_shared<std::string>("Some text");
-    hstrings::rand_str(*_direct_buff, 4000);
-    buff::output_adapter<std::string> _adapted_buffer(_direct_buff);
+
+    buff::output_adapter<std::string> _adapted_buffer;
+    auto _d_buff_ref = _adapted_buffer.get_ref();
+    hstrings::rand_str(_d_buff_ref, 4000);
     query<cmd::set> get_test("test", "1000");
     query<cmd::hash::hexists> test_query("test");
     // query<cmd::set, buff::direct_write_buffer> dw_q(buff_q_handler, "text_test", _adapted_buffer);
@@ -81,14 +71,14 @@ int main () {
         // buff::output_adapter<std::string> _adapted_buffer(_direct_buff);
         cl.async_send(query<cmd::set>("test", "1"), buff_q_handler);
     }
-    auto q_fut = cl.future_send("set test 0");
+    auto q_fut = cl.future_send(get_test);
     q_fut.wait();
     auto res = q_fut.get();
-//        cl.async_send(dw_q);
+    //        cl.async_send(dw_q);
 
     // cl.async_send(dw_q);
 
-//    t11.join();
+    //    t11.join();
     std::this_thread::sleep_for(std::chrono::seconds(2));
 
 #endif

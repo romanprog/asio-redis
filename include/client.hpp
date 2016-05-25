@@ -105,8 +105,22 @@ public:
 
 
     // /////////////////// Queryes section //////////////////////////////////////////////////
+    template <typename ...Args>
+    std::future<resp_data> future_send(Args && ...args)
+    {
+        std::shared_ptr<std::promise<resp_data>> prom_ptr = std::make_shared<std::promise<resp_data>>();
+        auto query_handler = [prom_ptr](int ec, const resp_data & result) mutable
+        {
+            if (ec)
+                prom_ptr->set_value(resp_data());
+            else
+                prom_ptr->set_value(result);
 
-    std::future<resp_data> future_send(const std::string & query);
+        };
+
+        async_send(std::forward<Args>(args)..., query_handler);
+        return prom_ptr->get_future();
+    }
 
     void async_send(const std::string & query, RedisCallback cb_);
 
