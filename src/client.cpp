@@ -10,6 +10,7 @@ client::client()
       _worked_time(_ev_loop->get_io_service())
 {
     reset_timer();
+    run_thread_worker();
 }
 
 client::client(strand_ptr strand_)
@@ -73,7 +74,7 @@ void client::async_connect(const std::string &master_ip_, unsigned master_port_,
 
 void client::async_send(const std::string &query, RedisCallback cb_)
 {
-    _master_pipeline->push(cb_, query);
+    _master_pipeline->push(cb_, query, true);
 }
 
 std::future<asio::error_code> client::future_connect(const std::string &master_ip_, unsigned master_port_,
@@ -86,6 +87,22 @@ std::future<asio::error_code> client::future_connect(const std::string &master_i
     };
 
     async_connect(master_ip_, master_port_, slave_pool_, all_connect_handler);
+    return prom_ptr->get_future();
+}
+
+std::future<resp_data> client::future_send(const std::string &query)
+{
+    std::shared_ptr<std::promise<resp_data>> prom_ptr = std::make_shared<std::promise<resp_data>>();
+    auto query_handler = [prom_ptr](int ec, const resp_data & result) mutable
+    {
+        if (ec)
+            prom_ptr->set_value(resp_data());
+        else
+            prom_ptr->set_value(result);
+
+    };
+
+    async_send(query, query_handler);
     return prom_ptr->get_future();
 }
 
@@ -149,7 +166,7 @@ void client::__init_master_serial(confirm_cb cb_)
             cb_(ec);
             return;
         }
-        _master_serial = std::make_shared<procs::async_serial>(_ev_loop, std::move(result));
+        _master_serial = std::make_shared<procs::serial>(_ev_loop, std::move(result));
         __ainit_spipeline_pool(cb_);
     });
 }
@@ -175,7 +192,7 @@ void client::__ainit_spipeline_pool(confirm_cb cb_, unsigned unit_num)
         _slave_pipeline_pool.add_unit(std::make_shared<procs::pipeline>(_ev_loop, std::move(result)), pref);
 
         if (unit_num == _slave_pool.size() - 1) {
-            __init_master_serial(cb_);
+            __ainit_sserial_pool(cb_);
             return;
         }
         __ainit_spipeline_pool(cb_, unit_num + 1);
@@ -196,7 +213,7 @@ void client::__ainit_sserial_pool(confirm_cb cb_, unsigned unit_num)
             return;
         }
 
-        _slave_serial_pool.add_unit(std::make_shared<procs::async_serial>(_ev_loop, std::move(result)), pref);
+        _slave_serial_pool.add_unit(std::make_shared<procs::serial>(_ev_loop, std::move(result)), pref);
 
         if (unit_num == _slave_pool.size() - 1) {
             cb_(asio::error_code());

@@ -18,7 +18,7 @@
 /// Important:
 /// If there is a probability of receiving incomplete data (parted) -
 /// RespData variable should not be reseted after the call parse_one().
-/// Next call parse_one() will updated it with new data
+/// Next call parse_one() will update it with new data
 /// ////////////////////////////////////////////////////////////////////////////
 
 namespace redis {

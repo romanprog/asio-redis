@@ -40,7 +40,7 @@ bool resp_proto::parse_one(redis::resp_data &respond)
     if (!__buffer->_incompl_arr) {
 
         respond.reset();
-        if (_read_data(respond, __buffer->data() + __buffer->_unparsed_offset))
+        if (_read_data(respond, __buffer->unparsed_data()))
             __buffer->_comlated = true;
     }
     else {

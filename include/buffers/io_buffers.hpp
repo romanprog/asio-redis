@@ -42,7 +42,7 @@ public:
     // Size of new (not sended) data.
     size_t new_data_size();
     // Add new query tu buffer line.
-    void add_query(const std::string &query);
+    void add_query(const std::string &query, bool plus_rn = false);
 
 private:
     // Memory management: cleaning, fast reset, data transfer on free sites

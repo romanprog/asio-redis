@@ -1,6 +1,8 @@
 #ifndef QUEUE_HPP
 #define QUEUE_HPP
 
+#include "spin_lock.hpp"
+
 #include <memory>
 #include <functional>
 #include <mutex>
@@ -10,74 +12,103 @@
 namespace redis {
 namespace threadsafe {
 
-template <typename AllocT, typename LockT = std::mutex>
+template <typename T, typename HeadLockT = std::mutex, typename TailLockT = redis::threadsafe::spin_lock>
 class queue
 {
 public:
-    queue() = default;
+    queue()
+        : _head(new node),
+          _tail(_head)
+    { }
 
-    void push(AllocT val)
+    ~queue()
     {
-        std::lock_guard<LockT> lm(_rw_lock);
-        _base_queue.push(val);
+        while (_head != _tail)
+        {
+            node * dl = _head;
+            _head = dl->next;
+            delete dl;
+        }
+        delete _head;
     }
 
-    const AllocT & front()
+    void push(T new_value)
     {
-        std::lock_guard<LockT> lm(_rw_lock);
-        return _base_queue.front();
+        node * p = new node;
+
+        {
+            std::lock_guard<TailLockT> lc(_tail_mux);
+            _tail->data = std::move(new_value);
+            _tail->next = p;
+            _tail = p;
+            ++_size;
+        }
     }
 
-    void pop()
+    bool try_pop(T & res)
     {
-        std::lock_guard<LockT> lm(_rw_lock);
+        node * old_head = try_pop_head();
 
-        if (_base_queue.empty())
-            return;
-
-        _base_queue.pop();
-    }
-
-    bool get_and_pop(AllocT & result_)
-    {
-        std::lock_guard<LockT> lm(_rw_lock);
-        if (_base_queue.empty())
+        if (!old_head)
             return false;
 
-        result_ = std::move(_base_queue.front());
-        _base_queue.pop();
+        res = std::move(old_head->data);
+        delete old_head;
         return true;
     }
 
-    bool get(AllocT & result_) const
-    {
-        std::lock_guard<LockT> lm(_rw_lock);
-        if (_base_queue.empty())
-            return false;
-
-        result_ = _base_queue.front();
-        return true;
-    }
-
-    void clear()
-    {
-        std::lock_guard<LockT> lm(_rw_lock);
-
-        while (!_base_queue.empty())
-            _base_queue.pop();
-
-    }
     bool empty() const
     {
-        std::lock_guard<LockT> lm(_rw_lock);
-        return _base_queue.empty();
+        std::lock_guard<HeadLockT> lc(_head_mux);
+        return !_size;
     }
 
-protected:
+    size_t size() const
+    {
+        return _size;
+    }
 
 
-    mutable LockT _rw_lock;
-    std::queue<AllocT> _base_queue;
+private:
+
+    std::atomic<size_t> _size{0};
+    struct node
+    {
+        T data;
+        node * next;
+
+    };
+
+    node * _head;
+    node * _tail;
+    mutable HeadLockT _head_mux;
+    mutable TailLockT _tail_mux;
+
+    friend class conn_queue;
+
+    node * get_tail()
+    {
+        std::lock_guard<TailLockT> lc(_tail_mux);
+        return _tail;
+    }
+
+    node * pop_head()
+    {
+        node * old_head = _head;
+        _head = old_head->next;
+        --_size;
+        return old_head;
+    }
+
+    node * try_pop_head()
+    {
+        std::lock_guard<HeadLockT> lc(_head_mux);
+        if (_head == get_tail())
+            return nullptr;
+
+        return pop_head();
+    }
+
 
 };
 

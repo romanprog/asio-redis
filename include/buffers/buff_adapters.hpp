@@ -52,9 +52,6 @@ public:
     }
 
 private:
-    // Delete copy and move constructors and assignment operators.
-    output_adapter(output_adapter &&) = delete;
-    output_adapter & operator= (output_adapter &&) = delete;
 
     std::shared_ptr<BaseBuffType> _base_buffer;
     size_t _sended_offset {0};

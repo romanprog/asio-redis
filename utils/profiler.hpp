@@ -33,6 +33,14 @@ public:
         return _dur_list;
     }
 
+    const long get_duration(const std::string & name) const
+    {
+        auto f = _dur_list.find(name);
+        if (f == _dur_list.end())
+            return 0;
+        return f->second;
+    }
+
     static profiler & global()
     {
         static profiler __global_profiler;

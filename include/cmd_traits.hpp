@@ -15,6 +15,8 @@ struct default_traits
     static constexpr bool no_params {false};
     using return_type = resp_data;
     using only_master_t = std::true_type;
+    using fixed_params_count_t = std::false_type;
+    static constexpr int params_count = 0;
 };
 /// //////////////////  CLUSTER COMMANDS //////////////////////////////
 namespace cluster {
@@ -506,17 +508,23 @@ struct set : public default_traits
     static constexpr auto name {"set"};
     static constexpr bool enable_direct_send_buff {true};
     using only_master_t = std::true_type;
+    using fixed_params_count_t = std::true_type;
+    static constexpr int params_count = 2;
 };
 
 struct incr : public default_traits
 {
-    static constexpr bool enable_direct_send_buff {true};
     static constexpr auto name {"incr"};
+    using fixed_params_count_t = std::true_type;
+    static constexpr int params_count = 1;
 };
 
 struct get : public default_traits
 {
     static constexpr auto name {"get"};
+    using only_master_t = std::false_type;
+    using fixed_params_count_t = std::true_type;
+    static constexpr int params_count = 1;
 };
 
 struct blpop : public default_traits

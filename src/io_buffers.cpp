@@ -73,13 +73,18 @@ size_t output_buff::new_data_size()
     return top_offset() - _sended_offset.load();
 }
 
-void output_buff::add_query(const std::string &query)
+void output_buff::add_query(const std::string &query, bool plus_rn)
 {
-//    release(query.size() + 2);
-//    memcpy(data_top(), query.data(), query.size());
-//    memcpy(static_cast<char*>(data_top()) + query.size(), "\r\n", 2);
-//    accept(query.size() + 2);
-    *this << query;
+
+    if (!plus_rn) {
+        *this << query;
+    } else
+    {
+        release(query.size() + 2);
+        memcpy(data_top(), query.data(), query.size());
+        memcpy(static_cast<char*>(data_top()) + query.size(), "\r\n", 2);
+        accept(query.size() + 2);
+    }
 
 }
 

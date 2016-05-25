@@ -18,7 +18,7 @@ public:
     soc_ptr get(asio::error_code &err, unsigned timeout_ = 5);
 private:
     strand_ptr _ev_loop;
-    threadsafe::conn_queue<soc_ptr> _cache;
+    threadsafe::conn_queue _cache;
     std::string _ip;
     unsigned _port;
     void __async_get_one(std::vector<soc_ptr> &&result, get_socs_list_callback cb_, unsigned count_, unsigned timeout_ = 1);
