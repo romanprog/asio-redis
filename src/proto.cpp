@@ -55,6 +55,44 @@ bool resp_proto::parse_one(redis::resp_data &respond)
     return __buffer->_comlated;
 }
 
+int resp_proto::parse_string(std::string &data)
+{
+
+    if (data.empty())
+       return false;
+
+    // Can parse only bulk strind data.
+    if (data[0] != '$')
+        throw std::logic_error("RESP data error. Wrong data type.");
+
+    // $-1\r\n. Null bulk string. (Unexisting key).
+    if (data[1] == '-') {
+        data.clear();
+        return true;
+    }
+    // $4\r\nABCD\r\n
+    // Read string size.
+    size_t bulk_size {0};
+    size_t i {2};
+
+    while (data[i] != '\r')
+    {
+        if (i == data.size() - 1)
+            return false;
+
+        bulk_size = (bulk_size * 10) + (data[i] - '0');
+        ++i;
+    }
+
+    if (data.size() - i - 4 < bulk_size)
+        return false;
+
+    data.erase(data.begin(), data.begin() + i + 2);
+    data.resize(data.size() - 2);
+    return true;
+
+}
+
 input_buff &resp_proto::buff()
 {
     return *__buffer;

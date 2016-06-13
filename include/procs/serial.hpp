@@ -26,7 +26,7 @@ public:
     template <typename T, typename cbType, typename BuffType>
     void push(const query<T, BuffType> & q_, cbType && cb_)
     {
-         _query_queue.push(serial_query_adapter(q_));
+         _query_queue.push(serial_query_adapter(q_, cb_));
          __proc_manager();
     }
 

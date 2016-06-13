@@ -73,7 +73,7 @@ void pipeline::__req_proc_manager()
 {
     bool cmp_tmp {false};
 
-    if (_req_proc_running.compare_exchange_strong(cmp_tmp, true, std::memory_order_release, std::memory_order_relaxed))
+    if (_req_proc_running.compare_exchange_strong(cmp_tmp, true))
     {
         if (_sending_buff.nothing_to_send()) {
             _req_proc_running.store(false);
@@ -101,7 +101,7 @@ void pipeline::__resp_proc()
               if (!_cb_queue.try_pop(cb))
                   throw std::logic_error("No one callbacks(11). Query/resp processors sync error.");
 
-              cb(1, _respond);
+              cb(0, _respond);
 
               if (_stop_in_progress && _cb_queue.empty())
                   work_done_report();

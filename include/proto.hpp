@@ -41,6 +41,8 @@ public:
     // posible, write results to @respond and return false.
     bool parse_one(redis::resp_data & respond);
 
+    static int parse_string(std::string & data);
+
     input_buff & buff();
 
 private:

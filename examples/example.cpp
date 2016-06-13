@@ -23,34 +23,32 @@ unsigned loops_count {1000000};
 int main () {
     using namespace redis;
 
+    std::string test_bulk {"$5\r\nROMER\r\n"};
+    resp_proto::parse_string(test_bulk);
+    std::cout << test_bulk << std::endl;
 
-    auto buff_q_handler = [](redis::rds_err er, const redis::resp_data & res)
-    {
-        ++qcounter;
-        if (qcounter == loops_count - 1)
-        {
-            profiler::global().checkpoint("qps");
-            double mls = profiler::global().get_duration("qps");
-            // long
-            double qps = (static_cast<double>(loops_count)/(mls?mls:mls+1))*1000000;
-            std::cout << "Loops: " << loops_count  << ", time: " << mls << "mks, " << qps << "qps" << std::endl;
-        }
-    };
-    query<cmd::cluster::cl_countkeysinslot> ds("sadasd");
-    std::cout << ds.as_string_ref() << std::endl;
-    // exit(0);
+    exit(0);
 
-    std::shared_ptr<std::string> _direct_buff = std::make_shared<std::string>("Some text");
+//    auto buff_q_handler = [](redis::rds_err er, const redis::resp_data & res)
+//    {
+//        ++qcounter;
+//        if (qcounter == loops_count - 1)
+//        {
+//            profiler::global().checkpoint("qps");
+//            double mls = profiler::global().get_duration("qps");
+//            // long
+//            double qps = (static_cast<double>(loops_count)/(mls?mls:mls+1))*1000000;
+//            std::cout << "Loops: " << loops_count  << ", time: " << mls << "mks, " << qps << "qps" << std::endl;
+//        }
+//    };
 
-    buff::output_adapter<std::string> _adapted_buffer;
-    auto _d_buff_ref = _adapted_buffer.get_ref();
-    hstrings::rand_str(_d_buff_ref, 4000);
-    query<cmd::set> get_test("test", "1000");
-    query<cmd::hash::hexists> test_query("test");
-    // query<cmd::set, buff::direct_write_buffer> dw_q(buff_q_handler, "text_test", _adapted_buffer);
+//    std::string _data_for_save;
+//    hstrings::rand_str(_data_for_save, 4000);
+    query<cmd::get> get_test("test");
+//    query<cmd::set, buff::direct_write_buffer> dw_q("text_test1", buff::output_adapter<std::string>(_data_for_save));
 
 
-#if 1
+// #if 1
     redis::client cl;
     auto conn_f = cl.future_connect("127.0.0.1", 6379);
     conn_f.wait();
@@ -63,14 +61,14 @@ int main () {
         std::cout << "Connected!" <<std::endl;
     }
 
-    query<cmd::incr> incr_query("test");
-    profiler::global().startpoint();
-    for (int i = 0; i < loops_count; ++i) {
-        // std::shared_ptr<std::string> _direct_buff = std::make_shared<std::string>();
-        // hstrings::rand_str(*_direct_buff, 1000);
-        // buff::output_adapter<std::string> _adapted_buffer(_direct_buff);
-        cl.async_send(query<cmd::set>("test", "1"), buff_q_handler);
-    }
+//    query<cmd::incr> incr_query("test");
+//    profiler::global().startpoint();
+//    auto fut = cl.future_send(dw_q);
+//    fut.wait();
+
+//    for (int i = 0; i < loops_count; ++i) {
+//        cl.async_send(incr_query , buff_q_handler);
+//    }
     auto q_fut = cl.future_send(get_test);
     q_fut.wait();
     auto res = q_fut.get();
@@ -81,7 +79,7 @@ int main () {
     //    t11.join();
     std::this_thread::sleep_for(std::chrono::seconds(2));
 
-#endif
+//#endif
 
 }
 
