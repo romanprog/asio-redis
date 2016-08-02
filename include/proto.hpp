@@ -41,7 +41,9 @@ public:
     // posible, write results to @respond and return false.
     bool parse_one(redis::resp_data & respond);
 
-    static int parse_string(std::string & data);
+    static int parse_string(std::string & data, size_t &bulk_sz);
+
+    bool try_bulk_parse(size_t sz, size_t & data_begin, size_t & ret_bulk_sz);
 
     input_buff & buff();
 

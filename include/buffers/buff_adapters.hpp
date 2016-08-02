@@ -68,40 +68,22 @@ private:
     size_t _sended_offset {0};
 };
 
-/// Adapt string or POD type vector for using as direct input buffer (read
+/// Adapt string  for using as direct input buffer (read
 /// redis respond directly into variable memory without copying)
-
-template <typename BaseBuffType>
 class input_adapter
 {
 public:
-    explicit input_adapter(BaseBuffType & buff_)
-        :_base_buffer(buff_)
+    explicit input_adapter(std::string & buff_, size_t expected_sz_)
+        :_base_buffer(buff_),
+          expected_sz(expected_sz_)
     {
-
-    }
-
-    // Confirm data part (@bytes_sended size) sending.
-    void sending_report(size_t bytes_sended)
-    {
-        _sended_offset += bytes_sended;
-    }
-
-    // Pointer to begining of new (not sended) data
-    const char * new_data() const
-    {
-        return static_cast<const char *>(_base_buffer.data() + _sended_offset);
+        // Reserve expected size + 25%
+        _base_buffer.reserve(expected_sz + expected_sz/4);
     }
 
     const char * data() const
     {
         return static_cast<const char *>(_base_buffer.data());
-    }
-
-    // Size of new (not sended) data.
-    size_t new_data_size() const
-    {
-        return _base_buffer.size() - _sended_offset;
     }
 
 
@@ -110,20 +92,33 @@ public:
         return _base_buffer.size();
     }
 
-    BaseBuffType & get_ref()
+    void release(size_t sz)
+    {
+        _base_buffer.resize(sz);
+    }
+
+    bool accept(size_t sz)
+    {
+        _top_offset += sz;
+    }
+
+    std::string & get_ref()
     {
         return _base_buffer;
     }
 
-    BaseBuffType & operator*()
+    std::string & operator*()
     {
         return _base_buffer;
     }
 
 private:
 
-    BaseBuffType & _base_buffer;
-    size_t _sended_offset {0};
+    std::string & _base_buffer;
+    size_t _parsed_offset {0};
+    size_t _top_offset {0};
+    size_t expected_sz {0};
+
 };
 
 

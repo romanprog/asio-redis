@@ -35,6 +35,4 @@ bool is_fqdn(const std::string &name)
     return true;
 }
 
-
-
 }

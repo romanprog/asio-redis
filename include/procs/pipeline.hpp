@@ -22,7 +22,7 @@ public:
     pipeline(strand_ptr main_loop_, soc_ptr && soc_);
     ~pipeline();
 
-    void push(RedisCallback cb_, const std::string &query_, bool one_line_query = false);
+    void push(RedisCB cb_, const std::string &query_, bool one_line_query = false);
 
 private:
     strand_ptr _ev_loop;
@@ -32,7 +32,7 @@ private:
     output_buff _sending_buff;
     redis::resp_data _respond;
 
-    threadsafe::queue<RedisCallback> _cb_queue;
+    threadsafe::queue<RedisCB> _cb_queue;
     std::mutex _send_buff_mux;
     std::atomic<bool> _req_proc_running {false};
     std::atomic<bool> _stop_in_progress {false};

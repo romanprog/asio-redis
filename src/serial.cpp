@@ -86,6 +86,7 @@ void serial::__resp_proc()
 
           //profiler::global().checkpoint("resp");
 
+
           while (_resp_parser.parse_one(_respond))  {
               serial_query_adapter cb_tmp;
               if (!_sended_queries.try_pop(cb_tmp))

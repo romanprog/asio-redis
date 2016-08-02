@@ -72,7 +72,7 @@ void client::async_connect(const std::string &master_ip_, unsigned master_port_,
 
 }
 
-void client::async_send(const std::string &query, RedisCallback cb_)
+void client::async_send(const std::string &query, RedisCB cb_)
 {
     _master_pipeline->push(cb_, query, true);
 }

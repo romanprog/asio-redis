@@ -55,7 +55,7 @@ bool resp_proto::parse_one(redis::resp_data &respond)
     return __buffer->_comlated;
 }
 
-int resp_proto::parse_string(std::string &data)
+int resp_proto::parse_string(std::string &data, size_t &ret_bulk_sz)
 {
 
     if (data.empty())
@@ -73,7 +73,9 @@ int resp_proto::parse_string(std::string &data)
     // $4\r\nABCD\r\n
     // Read string size.
     size_t bulk_size {0};
-    size_t i {2};
+    size_t i {1};
+
+    ret_bulk_sz = 0;
 
     while (data[i] != '\r')
     {
@@ -84,13 +86,59 @@ int resp_proto::parse_string(std::string &data)
         ++i;
     }
 
-    if (data.size() - i - 4 < bulk_size)
+
+    ret_bulk_sz = bulk_size;
+
+    if (data.size() < bulk_size + i + 4)
         return false;
 
     data.erase(data.begin(), data.begin() + i + 2);
-    data.resize(data.size() - 2);
+    data.resize(bulk_size);
     return true;
 
+}
+
+bool resp_proto::try_bulk_parse(size_t sz, size_t &data_begin, size_t &ret_bulk_sz)
+{
+    const char * cursor = __buffer->data();
+    data_begin = ret_bulk_sz = 0;
+
+    // It's not bulk string.
+    if (*cursor != '$')
+        return false;
+
+    ++cursor;
+    --sz;
+
+    // Check minimal bulk str size.
+    if (sz < 4)
+        return true;
+
+    // Empty bulk string. Data begin != 0, bulk_size == 0, return true.
+    if (*cursor == '-') {
+        data_begin = 3;
+        return true;
+    }
+
+    // Read string size.
+    size_t bulk_size {0};
+    size_t i {0};
+    // $3\r\nABC\r\n sz = 8
+    while (cursor[i] != '\r')
+    {
+        if (!(sz - i))
+            return true;
+
+        bulk_size = (bulk_size * 10) + (cursor[i] - '0');
+        ++i;
+    }
+
+    if (sz - i == bulk_size + 4) {
+        data_begin = sz - bulk_size - 1;
+        ret_bulk_sz = bulk_size;
+    }
+
+    return true;
 }
 
 input_buff &resp_proto::buff()

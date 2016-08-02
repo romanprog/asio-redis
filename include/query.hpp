@@ -196,7 +196,7 @@ protected:
     }
 
     template <typename T, typename ...Args, typename CT = CmdType, typename BT = ExtBuffType,
-              typename = std::enable_if_t<CT::enable_direct_send_buff &&
+              typename = std::enable_if_t<CT::enable_direct_write_buff &&
                                           std::is_same<BT, buff::direct_write_buffer>::value
                                           >
               >
@@ -207,7 +207,7 @@ protected:
     }
 
     template <typename T, typename ...Args, typename CT = CmdType, typename BT = ExtBuffType,
-              typename = std::enable_if_t<CT::enable_direct_send_buff &&
+              typename = std::enable_if_t<CT::enable_direct_write_buff &&
                                           std::is_same<BT, buff::direct_write_buffer>::value
                                           >
               >
@@ -229,10 +229,12 @@ protected:
 
 class serial_query_adapter
 {
-    RedisCallback _cb;
+    RedisCB _cb;
+    RedisDirectReadCB _dr_cb;
     unsigned _pcount{0};
     std::shared_ptr<std::string> _query;
     DBuffsPosList _ext_buffs_list;
+    bool _has_direct_read_buff {false};
 
 public:
 
@@ -247,6 +249,18 @@ public:
           _pcount(qu_._pcount),
           _query(qu_._query),
           _ext_buffs_list(qu_._ext_buffs_list)
+    {
+
+    }
+
+    template <typename qT, typename cbType,
+              typename = std::enable_if_t<qT::enable_direct_read_buff>
+              >
+    explicit serial_query_adapter(const qT & qu_, cbType && cb_)
+        : _dr_cb(std::forward<cbType>(cb_)),
+          _pcount(qu_._pcount),
+          _query(qu_._query),
+          _has_direct_read_buff(true)
     {
 
     }
@@ -267,9 +281,19 @@ public:
         return *_query;
     }
 
-    RedisCallback get_callback() const
+    RedisCB get_callback() const
     {
         return _cb;
+    }
+
+    RedisDirectReadCB get_dread_callback() const
+    {
+        return _dr_cb;
+    }
+
+    bool need_direct_buff()
+    {
+        return _has_direct_read_buff;
     }
 
 };

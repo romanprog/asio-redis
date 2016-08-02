@@ -21,7 +21,7 @@ pipeline::~pipeline()
     _socket->close();
 }
 
-void pipeline::push(RedisCallback cb_, const std::string &query_, bool one_line_query)
+void pipeline::push(RedisCB cb_, const std::string &query_, bool one_line_query)
 {
 
     if (_stop_in_progress) {
@@ -95,8 +95,7 @@ void pipeline::__resp_proc()
 
           while (_resp_parser.parse_one(_respond))
           {
-
-              RedisCallback cb;
+              RedisCB cb;
               // Call client function.
               if (!_cb_queue.try_pop(cb))
                   throw std::logic_error("No one callbacks(11). Query/resp processors sync error.");

@@ -42,6 +42,8 @@ enum class respond_type
     empty
 };
 
+class input_buff;
+
 struct resp_data
 {
     respond_type type {respond_type::empty};
@@ -57,6 +59,11 @@ struct resp_data
         isnull = false;
         type = respond_type::empty;
     }
+};
+
+struct resp_string
+{
+
 };
 
 struct srv_endpoint
@@ -77,8 +84,10 @@ struct srv_endpoint
 };
 
 using resp_data_ptr = std::unique_ptr<resp_data>;
-using RedisCallback = std::function<void (int, const resp_data &)>;
-using RedisCallbackQueue = std::queue<RedisCallback>;
+using RedisCal = std::function<void (int, const resp_data &)>;
+using RedisCB = std::function<void (int, const resp_data &)>;
+using RedisDirectReadCB = std::function<void (int, std::shared_ptr<input_buff>)>;
+using RedisCallbackQueue = std::queue<RedisCB>;
 using DBuffsPosList = std::vector<std::pair<size_t, asio::const_buffer>>;
 
 using soc_ptr = std::shared_ptr<asio::ip::tcp::socket>;

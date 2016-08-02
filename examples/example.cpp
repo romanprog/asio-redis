@@ -23,9 +23,27 @@ unsigned loops_count {1000000};
 int main () {
     using namespace redis;
 
-    std::string test_bulk {"$5\r\nROMER\r\n"};
-    resp_proto::parse_string(test_bulk);
-    std::cout << test_bulk << std::endl;
+    std::vector<std::string> str_vec{100};
+
+    for (int i = 0; i < 100; ++i)
+    {
+        hstrings::rand_str(str_vec[i], 1000000);
+    }
+    profiler::global().startpoint();
+
+
+
+
+    for (int i = 0; i < 100; ++i)
+    {
+        std::string move_to {std::move(str_vec[i])};
+    }
+
+    profiler::global().checkpoint("move");
+
+    double mls = profiler::global().get_duration("move");
+
+    std::cout << mls << std::endl;
 
     exit(0);
 
