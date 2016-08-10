@@ -46,7 +46,6 @@ public:
         return _base_buffer.size() - _sended_offset;
     }
 
-
     size_t size() const
     {
         return _base_buffer.size();
@@ -68,65 +67,7 @@ private:
     size_t _sended_offset {0};
 };
 
-/// Adapt string  for using as direct input buffer (read
-/// redis respond directly into variable memory without copying)
-class input_adapter
-{
-public:
-    explicit input_adapter(std::string & buff_, size_t expected_sz_)
-        :_base_buffer(buff_),
-          expected_sz(expected_sz_)
-    {
-        // Reserve expected size + 25%
-        _base_buffer.reserve(expected_sz + expected_sz/4);
-    }
-
-    const char * data() const
-    {
-        return static_cast<const char *>(_base_buffer.data());
-    }
-
-
-    size_t size() const
-    {
-        return _base_buffer.size();
-    }
-
-    void release(size_t sz)
-    {
-        _base_buffer.resize(sz);
-    }
-
-    bool accept(size_t sz)
-    {
-        _top_offset += sz;
-    }
-
-    std::string & get_ref()
-    {
-        return _base_buffer;
-    }
-
-    std::string & operator*()
-    {
-        return _base_buffer;
-    }
-
-private:
-
-    std::string & _base_buffer;
-    size_t _parsed_offset {0};
-    size_t _top_offset {0};
-    size_t expected_sz {0};
-
-};
-
-
-
-
 } // namespace buffers
-
-
-
 } // namespace redis
+
 #endif // BUFF_ADAPTERS_HPP

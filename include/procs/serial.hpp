@@ -23,16 +23,6 @@ public:
     serial(strand_ptr main_loop_, soc_ptr && soc_);
     ~serial();
 
-    template <typename T, typename cbType, typename BuffType,
-              typename = std::enable_if_t<std::is_same<BuffType, buff::direct_read_buffer>::value
-                                          >
-              >
-    void push(const query<T, BuffType> & q_, cbType && cb_)
-    {
-         _query_queue.push(serial_query_adapter(q_, cb_));
-         __proc_manager();
-    }
-
     template <typename T, typename cbType, typename BuffType>
     void push(const query<T, BuffType> & q_, cbType && cb_)
     {

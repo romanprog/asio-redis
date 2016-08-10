@@ -86,7 +86,6 @@ struct srv_endpoint
 using resp_data_ptr = std::unique_ptr<resp_data>;
 using RedisCal = std::function<void (int, const resp_data &)>;
 using RedisCB = std::function<void (int, const resp_data &)>;
-using RedisDirectReadCB = std::function<void (int, std::shared_ptr<input_buff>)>;
 using RedisCallbackQueue = std::queue<RedisCB>;
 using DBuffsPosList = std::vector<std::pair<size_t, asio::const_buffer>>;
 

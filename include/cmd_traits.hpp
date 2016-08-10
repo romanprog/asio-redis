@@ -11,7 +11,6 @@ struct default_traits
 {
     static constexpr bool is_blocking {false};
     static constexpr bool enable_direct_write_buff {false};
-    static constexpr bool enable_direct_read_buff {false};
     static constexpr bool no_params {false};
     using return_type = resp_data;
     using only_master_t = std::true_type;
@@ -214,7 +213,6 @@ struct hexists : public default_traits
 struct hget : public default_traits
 {
     using only_master_t = std::false_type;
-    static constexpr bool enable_direct_read_buff {true};
     static constexpr auto name {"HGET"};
 };
 
@@ -344,7 +342,6 @@ struct del: public default_traits
 struct dump: public default_traits
 {
     using only_master_t = std::false_type;
-    static constexpr bool enable_direct_read_buff {true};
     static constexpr auto name {"DUMP"};
 };
 
@@ -498,7 +495,6 @@ struct bgrewriteaof : public default_traits
 struct one_line : public default_traits
 {
     static constexpr bool is_blocking {false};
-    static constexpr bool enable_direct_read_buff {true};
     static constexpr bool no_params {true};
 };
 
@@ -522,7 +518,6 @@ struct incr : public default_traits
 struct get : public default_traits
 {
     static constexpr auto name {"get"};
-    static constexpr bool enable_direct_read_buffer {true};
     using only_master_t = std::false_type;
     using fixed_params_count_t = std::true_type;
     static constexpr int params_count = 1;
@@ -540,10 +535,6 @@ struct blpop : public default_traits
 namespace buff {
 
 struct common_buffer
-{
-};
-
-struct direct_read_buffer
 {
 };
 

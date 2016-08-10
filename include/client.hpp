@@ -138,12 +138,6 @@ public:
     }
 
     template <typename CmdType, typename cbType>
-    void async_send(const query<CmdType, buff::direct_read_buffer> & q_, cbType && cb_)
-    {
-        async_send_serial(q_, std::forward<cbType>(cb_), typename CmdType::only_master_t());
-    }
-
-    template <typename CmdType, typename cbType>
     void async_send_master(const query<CmdType, buff::common_buffer> & q_, cbType && cb_)
     {
         async_send_pipe(q_, std::forward<cbType>(cb_), std::true_type());
@@ -154,14 +148,6 @@ public:
     {
         async_send_serial(q_, std::forward<cbType>(cb_),  std::true_type());
     }
-
-    template <typename CmdType, typename cbType>
-    void async_send_master(const query<CmdType, buff::direct_read_buffer> & q_, cbType && cb_)
-    {
-        async_send_serial(q_, std::forward<cbType>(cb_),  std::true_type());
-    }
-
-
 
     void run_thread_worker();
 

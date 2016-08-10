@@ -65,7 +65,6 @@ int main () {
     query<cmd::get> get_test("test");
 //    query<cmd::set, buff::direct_write_buffer> dw_q("text_test1", buff::output_adapter<std::string>(_data_for_save));
 
-
 // #if 1
     redis::client cl;
     auto conn_f = cl.future_connect("127.0.0.1", 6379);

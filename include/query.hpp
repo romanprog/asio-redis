@@ -88,7 +88,6 @@ public:
     template <typename T = CmdType,
               typename ...Args,
               typename = std::enable_if_t<std::is_same<typename T::fixed_params_count_t, std::false_type>::value ||
-                                          std::is_same<ExtBuffType, redis::buff::direct_read_buffer>::value ||
                                           std::is_same<ExtBuffType, redis::buff::direct_write_buffer>::value>
               >
     explicit query(Args && ...args)
@@ -230,12 +229,9 @@ protected:
 class serial_query_adapter
 {
     RedisCB _cb;
-    RedisDirectReadCB _dr_cb;
     unsigned _pcount{0};
     std::shared_ptr<std::string> _query;
     DBuffsPosList _ext_buffs_list;
-    bool _has_direct_read_buff {false};
-
 public:
 
     serial_query_adapter()
@@ -249,18 +245,6 @@ public:
           _pcount(qu_._pcount),
           _query(qu_._query),
           _ext_buffs_list(qu_._ext_buffs_list)
-    {
-
-    }
-
-    template <typename qT, typename cbType,
-              typename = std::enable_if_t<qT::enable_direct_read_buff>
-              >
-    explicit serial_query_adapter(const qT & qu_, cbType && cb_)
-        : _dr_cb(std::forward<cbType>(cb_)),
-          _pcount(qu_._pcount),
-          _query(qu_._query),
-          _has_direct_read_buff(true)
     {
 
     }
@@ -284,16 +268,6 @@ public:
     RedisCB get_callback() const
     {
         return _cb;
-    }
-
-    RedisDirectReadCB get_dread_callback() const
-    {
-        return _dr_cb;
-    }
-
-    bool need_direct_buff()
-    {
-        return _has_direct_read_buff;
     }
 
 };
