@@ -103,7 +103,6 @@ public:
                                                  const std::vector<srv_endpoint> & slave_pool_);
 
 
-
     // /////////////////// Queryes section //////////////////////////////////////////////////
     template <typename ...Args>
     std::future<resp_data> future_send(Args && ...args)

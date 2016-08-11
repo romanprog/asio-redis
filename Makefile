@@ -52,7 +52,7 @@ LIB_NAME = asio-redis.so
 
 LIB_OBJECTS=$(SOURCES:.cpp=.o)
 
-EXAMPLES_SOURCES = examples/example.cpp \
+EXAMPLES_SOURCES = examples/direct_buff.cpp \
                    src/client.cpp \
                    src/conn_pool.cpp \
                    src/pipeline.cpp \
