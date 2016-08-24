@@ -24,11 +24,9 @@ class  query
 {
 public:
 
-    using query_cb_type = std::function<void (rds_err, const typename CmdType::return_type &)>;
-
+    // Constructor overload for redis commands with 1 arguments.
     template <typename T = CmdType, typename BType = ExtBuffType,
-              typename = std::enable_if_t<std::is_same<typename T::fixed_params_count_t, std::true_type>::value &&
-                                          T::params_count == 1 &&
+              typename = std::enable_if_t<T::params_count == 1 &&
                                           std::is_same<BType, redis::buff::common_buffer>::value
                                           >
               >
@@ -48,9 +46,9 @@ public:
         return;
     }
 
+    // Constructor overload for redis commands with 2 arguments.
     template <typename T = CmdType, typename BType = ExtBuffType,
-              typename = std::enable_if_t<std::is_same<typename T::fixed_params_count_t, std::true_type>::value &&
-                                          T::params_count == 2 &&
+              typename = std::enable_if_t<T::params_count == 2 &&
                                           std::is_same<BType, redis::buff::common_buffer>::value
                                           >
               >
@@ -71,9 +69,9 @@ public:
         return;
     }
 
-    // Overload for queryes without arguments.
+    // Constructor overload for queryes without arguments.
     template <typename T = CmdType,
-              typename = std::enable_if_t<T::no_params>
+              typename = std::enable_if_t<T::params_count == 0>
               >
     explicit query()
         : _query(new std::string())
@@ -87,7 +85,7 @@ public:
     // Overload for queryes with arguments.
     template <typename T = CmdType,
               typename ...Args,
-              typename = std::enable_if_t<std::is_same<typename T::fixed_params_count_t, std::false_type>::value ||
+              typename = std::enable_if_t<T::params_count < 0 ||
                                           std::is_same<ExtBuffType, redis::buff::direct_write_buffer>::value>
               >
     explicit query(Args && ...args)
@@ -106,7 +104,7 @@ public:
         // Recurcive query building.
         _build_RESP_next(CmdType::name, std::forward<Args>(args)...);
 
-        // Add prefix "*count\r\n" (see RESP protocol docs).
+        // Add prefix "*%count%\r\n" (see RESP protocol docs).
         size_t trimed = ins_query_prefix(*_query, _pcount);
 
         // Decreasing external direct buffers offsets.

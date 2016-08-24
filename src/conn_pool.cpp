@@ -40,6 +40,7 @@ void conn_manager::async_get(get_soc_callback cb_, unsigned timeout_)
             conn_timer->cancel();
             return;
         }
+
         conn_timer->cancel();
         _cache.push(soc_p);
         cb_(ec, std::move(soc_p));
@@ -62,13 +63,6 @@ void conn_manager::async_get(get_soc_callback cb_, unsigned timeout_)
 
 }
 
-void conn_manager::async_get(get_socs_list_callback cb_, unsigned count_, unsigned timeout_)
-{
-    std::vector<soc_ptr> result;
-
-    __async_get_one(std::move(result), cb_, count_, timeout_);
-}
-
 soc_ptr conn_manager::get(asio::error_code & err, unsigned timeout_)
 {
     std::promise<soc_ptr> conn_prom;
@@ -80,25 +74,8 @@ soc_ptr conn_manager::get(asio::error_code & err, unsigned timeout_)
     };
 
     async_get(conn_handler, timeout_);
-
     conn_fut.wait();
-
     return conn_fut.get();
 }
-
-void conn_manager::__async_get_one(std::vector<soc_ptr>&& result, get_socs_list_callback cb_, unsigned count_, unsigned timeout_)
-{
-    auto conn_handler = [res = std::move(result), count_, cb_, timeout_](asio::error_code & ec, soc_ptr && res_soc) mutable
-    {
-        if (ec) {
-            cb_(ec, std::vector<soc_ptr>());
-            return;
-        }
-        res.push_back(res_soc);
-
-    };
-
-}
-
 
 } //namespace redis

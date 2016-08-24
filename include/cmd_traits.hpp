@@ -11,11 +11,9 @@ struct default_traits
 {
     static constexpr bool is_blocking {false};
     static constexpr bool enable_direct_write_buff {false};
-    static constexpr bool no_params {false};
     using return_type = resp_data;
     using only_master_t = std::true_type;
-    using fixed_params_count_t = std::false_type;
-    static constexpr int params_count = 0;
+    static constexpr int params_count = -1;
 };
 /// //////////////////  CLUSTER COMMANDS //////////////////////////////
 namespace cluster {
@@ -66,7 +64,7 @@ struct cl_getkeysinslot : public default_traits
 struct cl_info : public default_traits
 {
     static const std::vector<std::string> name;
-    static constexpr bool no_params {true};
+    static constexpr int params_count = 0;
 };
 
 // CLUSTER KEYSLOT key
@@ -85,7 +83,7 @@ struct cl_meet : public default_traits
 struct cl_nodes : public default_traits
 {
     static const std::vector<std::string> name;
-    static constexpr bool no_params {true};
+    static constexpr int params_count = 0;
 };
 
 // CLUSTER REPLICATE node-id
@@ -104,7 +102,7 @@ struct cl_reset : public default_traits
 struct cl_saveconfig : public default_traits
 {
     static const std::vector<std::string> name;
-    static constexpr bool no_params {true};
+    static constexpr int params_count = 0;
 };
 
 // CLUSTER SET-CONFIG-EPOCH config-epoch
@@ -128,14 +126,14 @@ struct cl_slaves : public default_traits
 // READONLY
 struct readonly : public default_traits
 {
-    static constexpr bool no_params {true};
+    static constexpr int params_count = 0;
     static constexpr auto name {"READONLY"};
 };
 
 // READWRITE
 struct readwrite : public default_traits
 {
-    static constexpr bool no_params {true};
+    static constexpr int params_count = 0;
     static constexpr auto name {"READWRITE"};
 };
 
@@ -206,6 +204,7 @@ struct hdel : public default_traits
 struct hexists : public default_traits
 {
     using only_master_t = std::false_type;
+    static constexpr int params_count = 2;
     static constexpr auto name {"HEXISTS"};
 };
 
@@ -213,6 +212,7 @@ struct hexists : public default_traits
 struct hget : public default_traits
 {
     using only_master_t = std::false_type;
+    static constexpr int params_count = 2;
     static constexpr auto name {"HGET"};
 };
 
@@ -220,6 +220,7 @@ struct hget : public default_traits
 struct hgetall : public default_traits
 {
     using only_master_t = std::false_type;
+    static constexpr int params_count = 1;
     static constexpr auto name {"HGETALL"};
 };
 
@@ -239,6 +240,7 @@ struct hincrbyfloat: public default_traits
 struct hkeys: public default_traits
 {
     using only_master_t = std::false_type;
+    static constexpr int params_count = 1;
     static constexpr auto name {"HKEYS"};
 };
 
@@ -246,6 +248,7 @@ struct hkeys: public default_traits
 struct hlen: public default_traits
 {
     using only_master_t = std::false_type;
+    static constexpr int params_count = 1;
     static constexpr auto name {"HLEN"};
 };
 
@@ -288,6 +291,7 @@ struct hsetnx: public default_traits
 struct hstrlen: public default_traits
 {
     using only_master_t = std::false_type;
+    static constexpr int params_count = 2;
     static constexpr auto name {"HSTRLEN"};
 };
 
@@ -295,6 +299,7 @@ struct hstrlen: public default_traits
 struct hvals: public default_traits
 {
     using only_master_t = std::false_type;
+    static constexpr int params_count = 1;
     static constexpr auto name {"HVALS"};
 };
 
@@ -355,18 +360,21 @@ struct exists: public default_traits
 // EXPIRE key seconds
 struct expire: public default_traits
 {
+    static constexpr int params_count = 2;
     static constexpr auto name {"EXPIRE"};
 };
 
 // EXPIREAT key timestamp
 struct expireat: public default_traits
 {
+    static constexpr int params_count = 2;
     static constexpr auto name {"EXPIREAT"};
 };
 
 // KEYS pattern
 struct keys: public default_traits
 {
+    static constexpr int params_count = 1;
     using only_master_t = std::false_type;
     static constexpr auto name {"KEYS"};
 };
@@ -380,6 +388,7 @@ struct migrate: public default_traits
 // MOVE key db
 struct move: public default_traits
 {
+    static constexpr int params_count = 2;
     static constexpr auto name {"MOVE"};
 };
 
@@ -393,24 +402,28 @@ struct object: public default_traits
 // PERSIST key
 struct persist: public default_traits
 {
+    static constexpr int params_count = 1;
     static constexpr auto name {"PERSIST"};
 };
 
 // PEXPIRE key milliseconds
 struct pexpire: public default_traits
 {
+    static constexpr int params_count = 2;
     static constexpr auto name {"PEXPIRE"};
 };
 
 // PEXPIREAT key milliseconds-timestamp
 struct pexpireat: public default_traits
 {
+    static constexpr int params_count = 2;
     static constexpr auto name {"PEXPIREAT"};
 };
 
 // PTTL key
 struct pttl: public default_traits
 {
+    static constexpr int params_count = 1;
     using only_master_t = std::false_type;
     static constexpr auto name {"PTTL"};
 };
@@ -418,20 +431,22 @@ struct pttl: public default_traits
 // RANDOMKEY
 struct randomkey: public default_traits
 {
+    static constexpr int params_count = 0;
     using only_master_t = std::false_type;
-    static constexpr bool no_params {true};
     static constexpr auto name {"RANDOMKEY"};
 };
 
 // RENAME key newkey
 struct rename: public default_traits
 {
+    static constexpr int params_count = 2;
     static constexpr auto name {"RENAME"};
 };
 
 // RENAMENX key newkey
 struct renamenx: public default_traits
 {
+    static constexpr int params_count = 2;
     static constexpr auto name {"RENAMENX"};
 };
 
@@ -488,14 +503,14 @@ struct append : public default_traits
 // BGREWRITEAOF
 struct bgrewriteaof : public default_traits
 {
+    static constexpr int params_count = 0;
     static constexpr auto name {"BGREWRITEAOF"};
-    static constexpr bool no_params {true};
 };
 
 struct one_line : public default_traits
 {
+    static constexpr int params_count = 0;
     static constexpr bool is_blocking {false};
-    static constexpr bool no_params {true};
 };
 
 
@@ -504,14 +519,12 @@ struct set : public default_traits
     static constexpr auto name {"set"};
     static constexpr bool enable_direct_write_buff {true};
     using only_master_t = std::true_type;
-    using fixed_params_count_t = std::true_type;
     static constexpr int params_count = 2;
 };
 
 struct incr : public default_traits
 {
     static constexpr auto name {"incr"};
-    using fixed_params_count_t = std::true_type;
     static constexpr int params_count = 1;
 };
 
@@ -519,7 +532,6 @@ struct get : public default_traits
 {
     static constexpr auto name {"get"};
     using only_master_t = std::false_type;
-    using fixed_params_count_t = std::true_type;
     static constexpr int params_count = 1;
 };
 

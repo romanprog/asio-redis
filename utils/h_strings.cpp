@@ -166,6 +166,8 @@ bool cut_part_reverse(const std::string &text, std::string &result, char delim, 
         return (d == delim);
     };
 
+    // Need add overload without copyng a string.
+    int need_optimization;
     result = text;
 
     auto beg_iter = result.rbegin();
@@ -200,7 +202,7 @@ bool cut_part(std::string &text, char delim, size_t pindex)
     if (substr_coords.second < text.size())
         ++substr_coords.second;
     if (substr_coords.first > 0)
-        -- substr_coords.first;
+        --substr_coords.first;
 
     text.erase(substr_coords.first, substr_coords.second - substr_coords.first);
     return true;
