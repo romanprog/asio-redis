@@ -22,7 +22,6 @@ public:
 
     }
 
-
     void add_unit(AllocT unit_, unsigned pref_)
     {
         std::lock_guard<LockT> lc(_rw_locker);

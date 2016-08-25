@@ -17,6 +17,7 @@ pipeline::pipeline(strand_ptr main_loop_, soc_ptr &&soc_)
 
 pipeline::~pipeline()
 {
+    stop();
     _socket->cancel();
     _socket->close();
 }
@@ -26,8 +27,10 @@ void pipeline::push(RedisCB cb_, const std::string &query_, bool one_line_query)
 
     if (_stop_in_progress) {
         resp_data resp;
-        resp.sres = "Async processors stoped. Query ignored.";
+        resp.sres = "Pipeline processors stoped. Query ignored.";
+        resp.type = respond_type::error_str;
         cb_(100, resp);
+        return;
     }
 
     {
@@ -103,7 +106,10 @@ void pipeline::__resp_proc()
               cb(0, _respond);
 
               if (_stop_in_progress && _cb_queue.empty())
+              {
                   work_done_report();
+                  return;
+              }
 
           }
           __resp_proc();

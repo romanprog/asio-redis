@@ -41,7 +41,7 @@ public:
     const char * new_data();
     // Size of new (not sended) data.
     size_t new_data_size();
-    // Add new query tu buffer line.
+    // Add new query tu buffer line. If %plus_rn is true - add '\r\n' at the end of %query.
     void add_query(const std::string &query, bool plus_rn = false);
 
 private:

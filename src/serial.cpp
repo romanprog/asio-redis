@@ -16,8 +16,23 @@ serial::serial(strand_ptr main_loop_, soc_ptr &&soc_)
 
 serial::~serial()
 {
+    stop();
     _socket->cancel();
     _socket->close();
+}
+
+void serial::stop()
+{
+    _stop_in_progress = true;
+    if (!_sended_queries.empty() || !_query_queue.empty()) {
+        auto _local_waiter = _work_done_waiter.get_future().share();
+        _local_waiter.wait();
+    }
+}
+
+void serial::work_done_report()
+{
+    _work_done_waiter.set_value();
 }
 
 void serial::__req_poc()
@@ -96,8 +111,14 @@ void serial::__resp_proc()
           }
 
           if (_sended_queries.empty()) {
+              if (_stop_in_progress && _query_queue.empty())
+              {
+                  work_done_report();
+                  return;
+              }
               _proc_running.store(false);
               __proc_manager();
+              return;
           }
 
           __resp_proc();

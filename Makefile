@@ -1,14 +1,4 @@
 CXX:=$(shell sh -c 'type $(CXX) >/dev/null 2>/dev/null && echo $(CXX) || echo g++')
-#CXX = clang++
-
-MYSQL_C_INC ?= $(shell mysql_config --cflags)
-MYSQL_C_LIBS ?= $(shell mysql_config --libs)
-
-GMIME_INCLUDES ?=  $(shell pkg-config gmime-2.6 --cflags)
-GMIME_LIBS ?=  $(shell pkg-config gmime-2.6 --libs)
-
-CLD_INCLUDES = -I/usr/local/include/cld
-CLD_LIBS = -lcld2
 
 OPTIMIZATION = -O0
 

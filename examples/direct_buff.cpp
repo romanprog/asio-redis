@@ -64,7 +64,7 @@ int main () {
         cl.async_send(dw_q , buff_q_handler);
     }
 
-    std::this_thread::sleep_for(std::chrono::seconds(4));
+    // std::this_thread::sleep_for(std::chrono::seconds(4));
 
 //#endif
 

@@ -54,14 +54,15 @@ int main () {
         std::cout << "Connected!" <<std::endl;
     }
 
-//    query<cmd::incr> incr_query("test");
-//    profiler::global().startpoint();
+    query<cmd::incr> incr_query("test");
+    profiler::global().startpoint();
 //    auto fut = cl.future_send(dw_q);
 //    fut.wait();
 
-//    for (int i = 0; i < loops_count; ++i) {
-//        cl.async_send(incr_query , buff_q_handler);
-//    }
+    for (int i = 0; i < loops_count; ++i) {
+        cl.async_send(incr_query , buff_q_handler);
+    }
+
     auto q_fut = cl.future_send(get_test);
     q_fut.wait();
     auto res = q_fut.get();
@@ -70,7 +71,7 @@ int main () {
     // cl.async_send(dw_q);
 
     //    t11.join();
-    std::this_thread::sleep_for(std::chrono::seconds(2));
+    // std::this_thread::sleep_for(std::chrono::seconds(2));
 
 //#endif
 
