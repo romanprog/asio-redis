@@ -8,9 +8,9 @@
 #include <iostream>
 #include <thread>
 
-#include "../include/asio-redis.hpp"
-#include "../utils/h_strings.hpp"
-#include "../utils/profiler.hpp"
+#include "asio-redis.hpp"
+#include "../include/utils/h_strings.hpp"
+#include "../profiler/profiler.hpp"
 
 // Variables for benchmark.
 std::atomic<int> qcounter{0};

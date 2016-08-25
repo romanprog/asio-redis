@@ -9,7 +9,7 @@
 #include <mutex>
 #include <asio.hpp>
 
-#include "../utils/h_net.hpp"
+#include "utils/h_net.hpp"
 
 namespace redis {
 

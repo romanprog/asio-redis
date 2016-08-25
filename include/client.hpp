@@ -150,7 +150,6 @@ public:
 
     void run_thread_worker();
 
-
     ~client();
 
 private:
@@ -209,9 +208,8 @@ private:
         else
             _slave_serial_pool.balanced_rand()->push(q_, std::forward<cbType>(cb_));
     }
-
-
 };
+
 
 } // namespace redis
 #endif // CLIENT_HPP

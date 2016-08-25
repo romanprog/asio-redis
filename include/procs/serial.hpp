@@ -5,8 +5,6 @@
 #include "../proto.hpp"
 #include "../threadsafe/conn_queue.hpp"
 #include "../threadsafe/tests_lab.hpp"
-#include "../buffers/io_buffers.hpp"
-#include "../../utils/profiler.hpp"
 
 #include <mutex>
 #include <thread>

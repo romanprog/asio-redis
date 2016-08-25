@@ -1,5 +1,10 @@
 CXX:=$(shell sh -c 'type $(CXX) >/dev/null 2>/dev/null && echo $(CXX) || echo g++')
 
+INSTALL = install
+
+INSTALL_INCLUDE_PATH = /usr/local/include
+INSTALL_LIB_PATH = /usr/local/lib
+
 OPTIMIZATION = -O0
 
 WARNINGS =     \
@@ -35,39 +40,57 @@ LIB_SOURCES = src/client.cpp \
           src/io_buffers.cpp \
           src/buff_abstract.cpp \
 	  src/cmd_traits.cpp \
-          utils/h_net.cpp \
-          utils/h_strings.cpp \
+          src/h_net.cpp \
+          src/h_strings.cpp \
 
-LIB_NAME = asio-redis.so
+LIB_NAME = libasioredis.so
 
-LIB_OBJECTS=$(SOURCES:.cpp=.o)
+LIB_OBJECTS=$(LIB_SOURCES:.cpp=.o)
 
-EXAMPLES_SOURCES = examples/direct_buff.cpp \
-                   src/client.cpp \
-                   src/conn_pool.cpp \
-                   src/pipeline.cpp \
-                   src/proto.cpp \
-                   src/query.cpp \
-                   src/io_buffers.cpp \
-                   src/buff_abstract.cpp \
-		   src/cmd_traits.cpp \
-                   src/serial.cpp \
-                   utils/h_net.cpp \
-                   utils/h_strings.cpp
+EX_BASE_SOURCES = examples/example.cpp
 
-EXAMPLES_EXEC = asio-redis-ex
+EX_BASE_EXEC = base-exampe
 
-EXAMPLES_OBJ=$(EXAMPLES_SOURCES:.cpp=.o)
+EX_BASE_OBJ=$(EX_BASE_SOURCES:.cpp=.o)
 
-all: $(EXAMPLES_SOURCES) $(EXAMPLES_EXEC)
+EX_DBUF_SOURCES = examples/direct_buff.cpp
+
+EX_DBUF_EXEC = direct-buf-example
+
+EX_DBUF_OBJ=$(EX_DBUF_SOURCES:.cpp=.o)
 
 
-$(EXAMPLES_EXEC): $(EXAMPLES_OBJ)
-	$(CXX) $(LDFLAGS) $(EXAMPLES_OBJ) -o $@
+all: $(LIB_SOURCES) $(LIB_NAME)
+
+examples: $(EX_BASE_SOURCES) $(EX_BASE_EXEC) $(EX_DBUF_SOURCES) $(EX_DBUF_EXEC)
+
+install: $(LIB_NAME)
+	$(INSTALL) $(LIB_NAME) $(INSTALL_LIB_PATH)
+	$(INSTALL) asio-redis.hpp $(INSTALL_INCLUDE_PATH)
+	mkdir -p $(INSTALL_INCLUDE_PATH)/asio-redis
+	cp -r include/* $(INSTALL_INCLUDE_PATH)/asio-redis/
+
+reinstall: $(LIB_NAME)
+	  rm -f $(INSTALL_LIB_PATH)/$(LIB_NAME)
+	  rm -rf $(INSTALL_INCLUDE_PATH)/asio-redis/
+	  $(INSTALL) $(LIB_NAME) $(INSTALL_LIB_PATH)
+	  $(INSTALL) asio-redis.hpp $(INSTALL_INCLUDE_PATH)
+	  mkdir -p $(INSTALL_INCLUDE_PATH)/asio-redis
+	  cp -r include/* $(INSTALL_INCLUDE_PATH)/asio-redis/
+
+
+$(EX_BASE_EXEC): $(EX_BASE_OBJ)
+	$(CXX)  $(LDFLAGS) $(EX_BASE_OBJ) -o $@ -lasioredis
+
+$(EX_DBUF_EXEC): $(EX_DBUF_OBJ)
+	$(CXX)  $(LDFLAGS) $(EX_DBUF_OBJ) -o $@ -lasioredis
+
+$(LIB_NAME): $(LIB_OBJECTS)
+	$(CXX) -fPIC -shared $(LDFLAGS) $(LIB_OBJECTS) -o $@
 
 .cpp.o:
 	$(CXX) $(CXXFLAGS) $< -o $@
 
 clean: 
-	rm $(LIB_OBJECTS) $(LIB_NAME) $(EXAMPLES_OBJ) $(EXAMPLES_EXEC)
+	rm -f $(LIB_OBJECTS) $(LIB_NAME) $(EX_BASE_OBJ) $(EX_DBUF_OBJ) $(EX_BASE_EXEC) $(EX_DBUF_EXEC)
 

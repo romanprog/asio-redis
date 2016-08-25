@@ -2,8 +2,8 @@
 #include <arpa/inet.h>
 #include <algorithm>
 
-#include "h_net.hpp"
-#include "h_strings.hpp"
+#include "../include/utils/h_net.hpp"
+#include "../include/utils/h_strings.hpp"
 
 namespace hnet {
 

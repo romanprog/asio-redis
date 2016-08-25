@@ -55,7 +55,3 @@ private:
 
 } //namespace redis
 #endif // RESPBUFFER_HPP
-
-
-
-

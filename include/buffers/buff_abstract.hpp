@@ -31,7 +31,7 @@ public:
     void release(size_t size__);
 
     // Reset buffer, clear data, and ser all counters to default.
-    // If needed override this function - make sure to call @BuffAbstract::reset() in derived class!
+    // If needed, override this function - make sure to call @BuffAbstract::reset() in derived class!
     void reset(bool soft_reset = false);
 
     // In base variant - return full size of buffer @_size (size_filled() + size_avail()). Can be overridden in derived classes.
