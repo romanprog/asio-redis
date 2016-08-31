@@ -34,10 +34,6 @@ int main () {
 
     // Test string, that will used as direct buffer.
     std::string _data_for_save;
-    // Fill string to random data. Size - 4K.
-    hstrings::rand_str(_data_for_save, 4000);
-    // Create query over the string, using buffer adapter.
-    query<cmd::set, buff::direct_write_buffer> dw_q("text_test1", buff::output_adapter<std::string>(_data_for_save));
 
     // Main client.
     redis::client cl;
@@ -55,19 +51,16 @@ int main () {
         std::cout << "Connected!" <<std::endl;
     }
 
-//    query<cmd::incr> incr_query("test");
-      profiler::global().startpoint();
-//    auto fut = cl.future_send(dw_q);
-//    fut.wait();
+    profiler::global().startpoint();
+    // Fill string to random data. Size - 4K.
+    hstrings::rand_str(_data_for_save, 4000);
 
     for (int i = 0; i < loops_count; ++i) {
+
+        // Create query over the string, using buffer adapter.
+        query<cmd::set, buff::direct_write_buffer> dw_q("text_test1", buff::output_adapter<std::string>(_data_for_save));
         cl.async_send(dw_q , buff_q_handler);
     }
-
-    // std::this_thread::sleep_for(std::chrono::seconds(4));
-
-//#endif
-
 }
 
 

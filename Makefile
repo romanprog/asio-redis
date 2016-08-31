@@ -24,12 +24,14 @@ CXXFLAGS = $(OPTIMIZATION) -fPIC -fstack-protector $(CFLAGS) $(WARNINGS) $(DEBUG
 STDLIB =
 ifeq ($(shell uname -s), FreeBSD)
 STDLIB +=  -stdlib=libc++
-LIBXML_INCLUDES =
-LIBXML_INCLUDES = -I/usr/local/include/libxml2
 endif
 CXXFLAGS +=  $(STDLIB)
 
 CFLAGS=-c -Wall
+
+LIB_ASIO_STATIC_INC = -Wl,-Bstatic -l asioredis -Wl,-Bdynamic
+
+LIB_ASIO_DYN_INCLUDE = -l asioredis
 
 LIB_SOURCES = src/client.cpp \
           src/conn_pool.cpp \
@@ -49,48 +51,55 @@ LIB_OBJECTS=$(LIB_SOURCES:.cpp=.o)
 
 EX_BASE_SOURCES = examples/example.cpp
 
-EX_BASE_EXEC = base-exampe
+EX_BASE_EXEC = examples/base-example
 
 EX_BASE_OBJ=$(EX_BASE_SOURCES:.cpp=.o)
 
 EX_DBUF_SOURCES = examples/direct_buff.cpp
 
-EX_DBUF_EXEC = direct-buf-example
+EX_DBUF_EXEC = examples/direct-buf-example
 
 EX_DBUF_OBJ=$(EX_DBUF_SOURCES:.cpp=.o)
 
+STAT_LIB_NAME=libasioredis.a
 
-all: $(LIB_SOURCES) $(LIB_NAME)
+
+all: $(LIB_SOURCES) $(LIB_NAME) $(STAT_LIB_NAME)
 
 examples: $(EX_BASE_SOURCES) $(EX_BASE_EXEC) $(EX_DBUF_SOURCES) $(EX_DBUF_EXEC)
 
-install: $(LIB_NAME)
+install: $(LIB_NAME) $(STAT_LIB_NAME)
 	$(INSTALL) $(LIB_NAME) $(INSTALL_LIB_PATH)
+	$(INSTALL) $(STAT_LIB_NAME) $(INSTALL_LIB_PATH)
 	$(INSTALL) asio-redis.hpp $(INSTALL_INCLUDE_PATH)
 	mkdir -p $(INSTALL_INCLUDE_PATH)/asio-redis
 	cp -r include/* $(INSTALL_INCLUDE_PATH)/asio-redis/
 
-reinstall: $(LIB_NAME)
-	  rm -f $(INSTALL_LIB_PATH)/$(LIB_NAME)
+reinstall: $(LIB_NAME) $(STAT_LIB_NAME)
+	  rm -f $(INSTALL_LIB_PATH)/$(LIB_NAME) $(INSTALL_LIB_PATH)/$(STAT_LIB_NAME)
 	  rm -rf $(INSTALL_INCLUDE_PATH)/asio-redis/
 	  $(INSTALL) $(LIB_NAME) $(INSTALL_LIB_PATH)
+	  $(INSTALL) $(STAT_LIB_NAME) $(INSTALL_LIB_PATH)
 	  $(INSTALL) asio-redis.hpp $(INSTALL_INCLUDE_PATH)
 	  mkdir -p $(INSTALL_INCLUDE_PATH)/asio-redis
 	  cp -r include/* $(INSTALL_INCLUDE_PATH)/asio-redis/
 
 
 $(EX_BASE_EXEC): $(EX_BASE_OBJ)
-	$(CXX)  $(LDFLAGS) $(EX_BASE_OBJ) -o $@ -lasioredis
+	$(CXX)  $(LDFLAGS) $(EX_BASE_OBJ) -o $@ $(LIB_ASIO_STATIC_INC)
 
 $(EX_DBUF_EXEC): $(EX_DBUF_OBJ)
-	$(CXX)  $(LDFLAGS) $(EX_DBUF_OBJ) -o $@ -lasioredis
+	$(CXX)  $(LDFLAGS) $(EX_DBUF_OBJ) -o $@ $(LIB_ASIO_STATIC_INC)
 
 $(LIB_NAME): $(LIB_OBJECTS)
 	$(CXX) -fPIC -shared $(LDFLAGS) $(LIB_OBJECTS) -o $@
+
+$(STAT_LIB_NAME): $(LIB_OBJECTS)
+	ar -rs $@ $(LIB_OBJECTS)
 
 .cpp.o:
 	$(CXX) $(CXXFLAGS) $< -o $@
 
 clean: 
-	rm -f $(LIB_OBJECTS) $(LIB_NAME) $(EX_BASE_OBJ) $(EX_DBUF_OBJ) $(EX_BASE_EXEC) $(EX_DBUF_EXEC)
+	rm -f $(LIB_OBJECTS) $(LIB_NAME) $(EX_BASE_OBJ) $(EX_DBUF_OBJ) $(EX_BASE_EXEC) $(EX_DBUF_EXEC) $(STAT_LIB_NAME)
 
