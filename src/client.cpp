@@ -72,7 +72,7 @@ void client::async_connect(const std::string &master_ip_, unsigned master_port_,
 
 }
 
-void client::async_send(const std::string &query, RedisCB cb_)
+void client::async_send(const std::string &query, redis_callback cb_)
 {
     _master_pipeline->push(cb_, query, true);
 }
@@ -98,6 +98,17 @@ void client::run_thread_worker()
     {
         _ev_loop->get_io_service().run();
     });
+}
+
+void client::disconnect()
+{
+    _master_pipeline.reset();
+    _master_serial.reset();
+
+    _slave_pipeline_pool.clear();
+    _slave_serial_pool.clear();
+
+    _connected = false;
 }
 
 void client::reset_timer()

@@ -226,7 +226,7 @@ protected:
 
 class serial_query_adapter
 {
-    RedisCB _cb;
+    redis_callback _cb;
     unsigned _pcount{0};
     std::shared_ptr<std::string> _query;
     DBuffsPosList _ext_buffs_list;
@@ -263,7 +263,7 @@ public:
         return *_query;
     }
 
-    RedisCB get_callback() const
+    redis_callback get_callback() const
     {
         return _cb;
     }

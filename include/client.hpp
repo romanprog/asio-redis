@@ -121,7 +121,7 @@ public:
         return prom_ptr->get_future();
     }
 
-    void async_send(const std::string & query, RedisCB cb_);
+    void async_send(const std::string & query, redis_callback cb_);
 
 
     template <typename CmdType, typename cbType>
@@ -149,6 +149,7 @@ public:
     }
 
     void run_thread_worker();
+    void disconnect();
 
     ~client();
 
@@ -165,6 +166,10 @@ private:
     conn_mng_pool _slave_pool;
     pipeline_pool _slave_pipeline_pool;
     serial_pool _slave_serial_pool;
+
+    bool _connected {false};
+    bool _have_error {false};
+
 
     void reset_timer();
 

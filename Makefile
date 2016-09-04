@@ -30,6 +30,7 @@ CXXFLAGS +=  $(STDLIB)
 CFLAGS=-c -Wall
 
 LIB_ASIO_STATIC_INC = -Wl,-Bstatic -l asioredis -Wl,-Bdynamic
+LIB_ASIO_DYNAMIC_INC = -Wl,-Bdynamic -l asioredis
 
 LIB_ASIO_DYN_INCLUDE = -l asioredis
 
@@ -63,7 +64,6 @@ EX_DBUF_OBJ=$(EX_DBUF_SOURCES:.cpp=.o)
 
 STAT_LIB_NAME=libasioredis.a
 
-
 all: $(LIB_SOURCES) $(LIB_NAME) $(STAT_LIB_NAME)
 
 examples: $(EX_BASE_SOURCES) $(EX_BASE_EXEC) $(EX_DBUF_SOURCES) $(EX_DBUF_EXEC)
@@ -86,7 +86,7 @@ reinstall: $(LIB_NAME) $(STAT_LIB_NAME)
 
 
 $(EX_BASE_EXEC): $(EX_BASE_OBJ)
-	$(CXX)  $(LDFLAGS) $(EX_BASE_OBJ) -o $@ $(LIB_ASIO_STATIC_INC)
+	$(CXX)  $(LDFLAGS) $(EX_BASE_OBJ) -o $@ $(LIB_ASIO_DYNAMIC_INC)
 
 $(EX_DBUF_EXEC): $(EX_DBUF_OBJ)
 	$(CXX)  $(LDFLAGS) $(EX_DBUF_OBJ) -o $@ $(LIB_ASIO_STATIC_INC)
@@ -102,4 +102,3 @@ $(STAT_LIB_NAME): $(LIB_OBJECTS)
 
 clean: 
 	rm -f $(LIB_OBJECTS) $(LIB_NAME) $(EX_BASE_OBJ) $(EX_DBUF_OBJ) $(EX_BASE_EXEC) $(EX_DBUF_EXEC) $(STAT_LIB_NAME)
-

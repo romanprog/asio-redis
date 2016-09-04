@@ -510,7 +510,6 @@ struct bgrewriteaof : public default_traits
 struct one_line : public default_traits
 {
     static constexpr int params_count = 0;
-    static constexpr bool is_blocking {false};
 };
 
 

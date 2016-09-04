@@ -52,8 +52,8 @@ int main () {
     }
 
     profiler::global().startpoint();
-    // Fill string to random data. Size - 4K.
-    hstrings::rand_str(_data_for_save, 4000);
+    // Fill string to random data. Size - 10K.
+    hstrings::rand_str(_data_for_save, 10000);
 
     for (int i = 0; i < loops_count; ++i) {
 
