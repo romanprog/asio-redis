@@ -17,7 +17,7 @@ size_t ins_query_prefix(std::string & query_, unsigned pcount_);
 void add_query_part(std::string & query_, const char * part_);
 
 std::vector<asio::const_buffer> build_multibuffer(const std::string & query_,
-                                                  const DBuffsPosList & _ext_buffs_list);
+                                                  const qbuff_pos_list & _ext_buffs_list);
 
 template <typename CmdType, typename ExtBuffType = redis::buff::common_buffer>
 class  query
@@ -137,7 +137,7 @@ public:
 protected:
     unsigned _pcount{0};
     std::shared_ptr<std::string> _query;
-    DBuffsPosList _ext_buffs_list;
+    qbuff_pos_list _ext_buffs_list;
 
     friend class serial_query_adapter;
 
@@ -229,7 +229,7 @@ class serial_query_adapter
     redis_callback _cb;
     unsigned _pcount{0};
     std::shared_ptr<std::string> _query;
-    DBuffsPosList _ext_buffs_list;
+    qbuff_pos_list _ext_buffs_list;
 public:
 
     serial_query_adapter()

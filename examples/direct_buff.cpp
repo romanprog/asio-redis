@@ -14,7 +14,7 @@
 
 // Variables for benchmark.
 std::atomic<int> qcounter{0};
-unsigned loops_count {100000};
+unsigned loops_count {400000};
 
 int main () {
     using namespace redis;
@@ -38,13 +38,14 @@ int main () {
     // Main client.
     redis::client cl;
     // Try connect to database, using future function and one master endpoint.
-    auto conn_f = cl.future_connect("127.0.0.1", 6379);
+    auto conn_f = cl.future_connect("212.42.67.73", 6379);
     conn_f.wait();
 
+    auto ec = conn_f.get();
     // get method return asio::error_code, check for error.
-    if (conn_f.get()) {
+    if (ec) {
         // asio::error_code != 0, connection error.
-        throw std::logic_error("Connection error");
+        throw std::logic_error(ec.message());
     }
     else {
         // Connected.
@@ -55,12 +56,15 @@ int main () {
     // Fill string to random data. Size - 10K.
     hstrings::rand_str(_data_for_save, 10000);
 
+    redis::query<redis::cmd::key::del> test_cmd("testttt", "123", "24fds", "sadasd");
+
     for (int i = 0; i < loops_count; ++i) {
 
         // Create query over the string, using buffer adapter.
         query<cmd::set, buff::direct_write_buffer> dw_q("text_test1", buff::output_adapter<std::string>(_data_for_save));
         cl.async_send(dw_q , buff_q_handler);
     }
+
 }
 
 

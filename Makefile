@@ -51,22 +51,22 @@ LIB_NAME = libasioredis.so
 LIB_OBJECTS=$(LIB_SOURCES:.cpp=.o)
 
 EX_BASE_SOURCES = examples/example.cpp
-
 EX_BASE_EXEC = examples/base-example
-
 EX_BASE_OBJ=$(EX_BASE_SOURCES:.cpp=.o)
 
+EX_HIREDIS_SOURCES = examples/hiredis_test.cpp
+EX_HIREDIS_EXEC = examples/hiredis-test
+EX_HIREDIS_OBJ=$(EX_HIREDIS_SOURCES:.cpp=.o)
+
 EX_DBUF_SOURCES = examples/direct_buff.cpp
-
 EX_DBUF_EXEC = examples/direct-buf-example
-
 EX_DBUF_OBJ=$(EX_DBUF_SOURCES:.cpp=.o)
 
 STAT_LIB_NAME=libasioredis.a
 
 all: $(LIB_SOURCES) $(LIB_NAME) $(STAT_LIB_NAME)
 
-examples: $(EX_BASE_SOURCES) $(EX_BASE_EXEC) $(EX_DBUF_SOURCES) $(EX_DBUF_EXEC)
+examples: $(EX_BASE_SOURCES) $(EX_BASE_EXEC) $(EX_DBUF_SOURCES) $(EX_DBUF_EXEC) $(EX_HIREDIS_SOURCES) $(EX_HIREDIS_EXEC)
 
 install: $(LIB_NAME) $(STAT_LIB_NAME)
 	$(INSTALL) $(LIB_NAME) $(INSTALL_LIB_PATH)
@@ -87,6 +87,9 @@ reinstall: $(LIB_NAME) $(STAT_LIB_NAME)
 
 $(EX_BASE_EXEC): $(EX_BASE_OBJ)
 	$(CXX)  $(LDFLAGS) $(EX_BASE_OBJ) -o $@ $(LIB_ASIO_DYNAMIC_INC)
+
+$(EX_HIREDIS_EXEC): $(EX_HIREDIS_OBJ)
+	$(CXX)  $(LDFLAGS) $(EX_HIREDIS_OBJ) -o $@ -lhiredis -lev
 
 $(EX_DBUF_EXEC): $(EX_DBUF_OBJ)
 	$(CXX)  $(LDFLAGS) $(EX_DBUF_OBJ) -o $@ $(LIB_ASIO_STATIC_INC)

@@ -85,10 +85,8 @@ struct srv_endpoint
 };
 
 using resp_data_ptr = std::unique_ptr<resp_data>;
-using RedisCal = std::function<void (int, const resp_data &)>;
 using redis_callback = std::function<void (int, const resp_data &)>;
-using RedisCallbackQueue = std::queue<redis_callback>;
-using DBuffsPosList = std::vector<std::pair<size_t, asio::const_buffer>>;
+using qbuff_pos_list = std::vector<std::pair<size_t, asio::const_buffer>>;
 
 using soc_ptr = std::shared_ptr<asio::ip::tcp::socket>;
 using strand_ptr = std::shared_ptr<asio::strand>;

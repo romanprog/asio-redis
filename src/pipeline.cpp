@@ -136,7 +136,9 @@ void pipeline::__resp_proc()
     auto resp_handler = [this](std::error_code ec, std::size_t bytes_sent)
     {
           if (ec) {
-              __socket_error_hendler(ec);
+              if (!_cb_queue.empty())
+                __socket_error_hendler(ec);
+
               return;
           }
 

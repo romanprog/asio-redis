@@ -6,6 +6,7 @@
 #include "../threadsafe/conn_queue.hpp"
 #include "../threadsafe/tests_lab.hpp"
 
+#include <asio/steady_timer.hpp>
 #include <mutex>
 #include <thread>
 #include <future>
@@ -18,7 +19,7 @@ class serial
 {
 public:
 
-    serial(strand_ptr main_loop_, soc_ptr && soc_);
+    serial(strand_ptr main_loop_, soc_ptr && soc_, unsigned timeout_ = 3);
     ~serial();
 
     template <typename T, typename cbType, typename BuffType>
@@ -44,18 +45,25 @@ private:
     redis::resp_data _respond;
     size_t max_query_in_multibuff {10};
 
+    // Timer
+    asio::steady_timer _timeout_clock;
+    unsigned _timeout_seconds;
+    bool _timer_is_started {false};
+
     threadsafe::queue<serial_query_adapter> _query_queue;
     threadsafe::queue<serial_query_adapter> _sended_queries;
 
     std::atomic<bool> _proc_running {false};
-
     std::atomic<bool> _stop_in_progress {false};
-
     std::promise<void> _work_done_waiter;
 
     void stop();
     void work_done_report();
+    void __socket_error_hendler(std::error_code ec);
 
+    // Timer
+    void __timeout_hendler();
+    void __reset_timeout();
 
     void __req_poc();
     void __proc_manager();

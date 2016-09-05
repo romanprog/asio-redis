@@ -34,19 +34,16 @@ void add_query_part(std::string &query_, const char *part_)
 
 }
 
-std::vector<asio::const_buffer> build_multibuffer(const std::string &query_, const DBuffsPosList &ext_buffs_list_)
+std::vector<asio::const_buffer> build_multibuffer(const std::string &query_, const qbuff_pos_list &ext_buffs_list_)
 {
     std::vector<asio::const_buffer> res;
     size_t prev_pos {0};
     for (auto & pos : ext_buffs_list_)
     {
-//        std::cout << std::string(query_.data() + prev_pos, pos.first - prev_pos);
-
         res.push_back(asio::buffer(query_.data() + prev_pos, pos.first - prev_pos));
         res.push_back(pos.second);
         prev_pos = pos.first;
     }
-//    std::cout << std::string(query_.data() + prev_pos, query_.size() - prev_pos);
     res.push_back(asio::buffer(query_.data() + prev_pos, query_.size() - prev_pos));
     return res;
 }

@@ -12,8 +12,8 @@ class conn_manager
 {
 public:
     conn_manager(const strand_ptr & ev, std::string ip_, unsigned port_);
-    void async_get(get_soc_callback cb_, unsigned timeout_ = 5);
-    soc_ptr get(asio::error_code &err, unsigned timeout_ = 5);
+    void async_get(get_soc_callback cb_, unsigned timeout_ = 3);
+    soc_ptr get(asio::error_code &err, unsigned timeout_ = 3);
 private:
     strand_ptr _ev_loop;
     threadsafe::conn_queue _cache;

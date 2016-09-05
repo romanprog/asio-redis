@@ -56,10 +56,6 @@ int main () {
         cl.async_send(incr_query , buff_q_handler);
     }
 
-
-    sleep(10);
-
-
 }
 
 
