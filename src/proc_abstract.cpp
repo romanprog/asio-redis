@@ -39,7 +39,7 @@ void proc_abstract::__req_proc_manager()
 
     if (_req_proc_running.compare_exchange_strong(cmp_tmp, true))
     {
-        if (_sending_buff.nothing_to_send()) {
+        if (nothing_to_send()) {
             _req_proc_running.store(false);
             return;
         }

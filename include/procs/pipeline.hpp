@@ -29,6 +29,7 @@ private:
     void __req_poc() override;
     void __resp_proc() override;
     inline bool queues_is_empty() override;
+    inline bool nothing_to_send() override;
 };
 
 using pipeline_ptr = std::shared_ptr<pipeline>;

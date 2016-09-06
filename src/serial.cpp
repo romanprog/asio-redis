@@ -109,6 +109,11 @@ bool serial::queues_is_empty()
     return (_sended_queries.empty() && _query_queue.empty());
 }
 
+bool serial::nothing_to_send()
+{
+    return _query_queue.empty();
+}
+
 } // namespace procs
 
 } // namespace redis

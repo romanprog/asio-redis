@@ -121,6 +121,11 @@ bool pipeline::queues_is_empty()
     return _cb_queue.empty();
 }
 
+bool pipeline::nothing_to_send()
+{
+    return _sending_buff.nothing_to_send();
+}
+
 } // namespace procs
 
 } // namespace redis

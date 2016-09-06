@@ -14,7 +14,7 @@
 
 // Variables for benchmark.
 std::atomic<int> qcounter{0};
-unsigned loops_count {400000};
+unsigned loops_count {100000};
 
 int main () {
     using namespace redis;
@@ -38,7 +38,7 @@ int main () {
     // Main client.
     redis::client cl;
     // Try connect to database, using future function and one master endpoint.
-    auto conn_f = cl.future_connect("212.42.67.73", 6379);
+    auto conn_f = cl.future_connect("127.0.0.1", 6379);
     conn_f.wait();
 
     auto ec = conn_f.get();

@@ -55,6 +55,7 @@ protected:
     virtual void __resp_proc() = 0;
 
     virtual bool queues_is_empty() = 0;
+    virtual bool nothing_to_send() = 0;
 
 };
 
