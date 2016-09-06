@@ -23,6 +23,7 @@ public:
 
     ~queue()
     {
+        // std::lock_guard<HeadLockT> lc(_head_mux);
         while (_head != _tail)
         {
             node * dl = _head;

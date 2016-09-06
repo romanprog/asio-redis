@@ -45,6 +45,7 @@ LIB_SOURCES = src/client.cpp \
 	  src/cmd_traits.cpp \
           src/h_net.cpp \
           src/h_strings.cpp \
+          src/proc_abstract.cpp
 
 LIB_NAME = libasioredis.so
 
@@ -86,7 +87,7 @@ reinstall: $(LIB_NAME) $(STAT_LIB_NAME)
 
 
 $(EX_BASE_EXEC): $(EX_BASE_OBJ)
-	$(CXX)  $(LDFLAGS) $(EX_BASE_OBJ) -o $@ $(LIB_ASIO_DYNAMIC_INC)
+	$(CXX)  $(LDFLAGS) $(EX_BASE_OBJ) -o $@ $(LIB_ASIO_STATIC_INC)
 
 $(EX_HIREDIS_EXEC): $(EX_HIREDIS_OBJ)
 	$(CXX)  $(LDFLAGS) $(EX_HIREDIS_OBJ) -o $@ -lhiredis -lev

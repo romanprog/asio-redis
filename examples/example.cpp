@@ -52,8 +52,10 @@ int main () {
     profiler::global().startpoint();
 
 
-    for (int i = 0; i < loops_count; ++i) {
-        cl.async_send(incr_query , buff_q_handler);
+    for (int i = 0; i < loops_count/100; ++i) {
+        for (int j = 0; j < 100; ++j)
+            cl.async_send(incr_query , buff_q_handler);
+        // std::this_thread::sleep_for(std::chrono::microseconds(10));
     }
 
 }

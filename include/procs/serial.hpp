@@ -1,21 +1,13 @@
 #ifndef SERIAL_HPP
 #define SERIAL_HPP
 
-#include "../query.hpp"
-#include "../proto.hpp"
-#include "../threadsafe/conn_queue.hpp"
-#include "../threadsafe/tests_lab.hpp"
-
-#include <asio/steady_timer.hpp>
-#include <mutex>
-#include <thread>
-#include <future>
+#include "proc_abstract.hpp"
 
 namespace redis {
 
 namespace procs {
 
-class serial
+class serial : public proc_abstract
 {
 public:
 
@@ -34,40 +26,18 @@ public:
         }
 
          _query_queue.push(serial_query_adapter(q_, cb_));
-         __proc_manager();
+         __req_proc_manager();
     }
 
 private:
-    strand_ptr _ev_loop;
-    soc_ptr _socket;
-    resp_proto _resp_parser;
-    input_buff & _reading_buff;
-    redis::resp_data _respond;
-    size_t max_query_in_multibuff {10};
 
-    // Timer
-    asio::steady_timer _timeout_clock;
-    unsigned _timeout_seconds;
-    bool _timer_is_started {false};
-
+    const size_t max_query_in_multibuff {10};
     threadsafe::queue<serial_query_adapter> _query_queue;
     threadsafe::queue<serial_query_adapter> _sended_queries;
 
-    std::atomic<bool> _proc_running {false};
-    std::atomic<bool> _stop_in_progress {false};
-    std::promise<void> _work_done_waiter;
-
-    void stop();
-    void work_done_report();
-    void __socket_error_hendler(std::error_code ec);
-
-    // Timer
-    void __timeout_hendler();
-    void __reset_timeout();
-
-    void __req_poc();
-    void __proc_manager();
-    void __resp_proc();
+    void __req_poc() override;
+    void __resp_proc() override;
+    inline bool queues_is_empty() override;
 };
 
 using serial_ptr = std::shared_ptr<serial>;

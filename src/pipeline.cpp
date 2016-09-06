@@ -1,6 +1,7 @@
 #include "../include/procs/pipeline.hpp"
 
 #include <asio.hpp>
+#include <utility>
 
 namespace redis {
 
@@ -8,11 +9,7 @@ namespace procs {
 
 
 pipeline::pipeline(strand_ptr main_loop_, soc_ptr &&soc_, unsigned timeout_)
-    : _ev_loop(std::move(main_loop_)),
-      _socket(std::move(soc_)),
-      _reading_buff(_resp_parser.buff()),
-      _timeout_clock(_ev_loop->get_io_service()),
-      _timeout_seconds(timeout_)
+    :proc_abstract::proc_abstract(std::move(main_loop_), std::move(soc_), timeout_)
 {
     __resp_proc();
 }
@@ -20,8 +17,6 @@ pipeline::pipeline(strand_ptr main_loop_, soc_ptr &&soc_, unsigned timeout_)
 pipeline::~pipeline()
 {
     stop();
-    _socket->cancel();
-    _socket->close();
 }
 
 void pipeline::push(redis_callback cb_, const std::string &query_, bool one_line_query)
@@ -44,48 +39,6 @@ void pipeline::push(redis_callback cb_, const std::string &query_, bool one_line
     __req_proc_manager();
 }
 
-void pipeline::set_timeout(unsigned timeout_)
-{
-    if (timeout_)
-        _timeout_seconds = timeout_;
-    else
-        throw std::logic_error("Can not set 0 seconds timeout.");
-}
-
-void pipeline::stop()
-{
-    _stop_in_progress = true;
-    if (!_cb_queue.empty()) {
-        auto _local_waiter = _work_done_waiter.get_future().share();
-        _local_waiter.wait();
-    }
-}
-
-void pipeline::work_done_report()
-{
-    _work_done_waiter.set_value();
-}
-
-void pipeline::__socket_error_hendler(std::error_code ec)
-{
-
-    throw std::logic_error(ec.message());
-}
-
-void pipeline::__timeout_hendler()
-{
-    throw std::logic_error("Socket timeout!");
-}
-
-void pipeline::__reset_timeout()
-{
-    _timeout_clock.expires_from_now(std::chrono::seconds(_timeout_seconds));
-    _timeout_clock.async_wait([this](asio::error_code ec)
-    {
-        if (!ec)
-            __timeout_hendler();
-    });
-}
 
 
 void pipeline::__req_poc()
@@ -112,22 +65,12 @@ void pipeline::__req_poc()
         _timer_is_started = true;
         __reset_timeout();
     }
+    const char * new_data_tmp =  _sending_buff.new_data();
+    size_t new_data_size_tmp = _sending_buff.new_data_size();
 
-    _socket->async_write_some(asio::buffer(_sending_buff.new_data(), _sending_buff.new_data_size()), _ev_loop->wrap(req_handler));
-}
 
-void pipeline::__req_proc_manager()
-{
-    bool cmp_tmp {false};
-
-    if (_req_proc_running.compare_exchange_strong(cmp_tmp, true))
-    {
-        if (_sending_buff.nothing_to_send()) {
-            _req_proc_running.store(false);
-            return;
-        }
-        __req_poc();
-    }
+    // _socket->async_send(asio::buffer(new_data_tmp, new_data_size_tmp), _ev_loop->wrap(req_handler));
+    asio::async_write(*_socket, asio::buffer(new_data_tmp, new_data_size_tmp), _ev_loop->wrap(req_handler));
 }
 
 void pipeline::__resp_proc()
@@ -171,6 +114,11 @@ void pipeline::__resp_proc()
     };
 
     _socket->async_read_some(asio::buffer(_reading_buff.data_top(), _reading_buff.size_avail()), _ev_loop->wrap(resp_handler));
+}
+
+bool pipeline::queues_is_empty()
+{
+    return _cb_queue.empty();
 }
 
 } // namespace procs

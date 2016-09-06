@@ -7,55 +7,14 @@ namespace redis {
 namespace procs {
 
 serial::serial(strand_ptr main_loop_, soc_ptr &&soc_, unsigned timeout_)
-    : _ev_loop(main_loop_),
-      _socket(std::move(soc_)),
-      _reading_buff(_resp_parser.buff()),
-      _timeout_clock(main_loop_->get_io_service()),
-      _timeout_seconds(timeout_)
-{
-
-}
+    :proc_abstract::proc_abstract(std::move(main_loop_), std::move(soc_), timeout_)
+{ }
 
 serial::~serial()
 {
     stop();
-    _socket->cancel();
-    _socket->close();
 }
 
-void serial::stop()
-{
-    _stop_in_progress = true;
-    if (!_sended_queries.empty() || !_query_queue.empty()) {
-        auto _local_waiter = _work_done_waiter.get_future().share();
-        _local_waiter.wait();
-    }
-}
-
-void serial::work_done_report()
-{
-    _work_done_waiter.set_value();
-}
-
-void serial::__socket_error_hendler(std::error_code ec)
-{
-    throw std::logic_error(ec.message());
-}
-
-void serial::__timeout_hendler()
-{
-    throw std::logic_error("Socket timeout in serial proc!");
-}
-
-void serial::__reset_timeout()
-{
-    _timeout_clock.expires_from_now(std::chrono::seconds(_timeout_seconds));
-    _timeout_clock.async_wait([this](asio::error_code ec)
-    {
-        if (!ec)
-            __timeout_hendler();
-    });
-}
 
 void serial::__req_poc()
 {
@@ -67,8 +26,8 @@ void serial::__req_poc()
             while (_sended_queries.try_pop(q_tmp)) {
                 auto cb = q_tmp.get_callback();
                 cb(1, resp_data());
-                _proc_running.store(false);
-                __proc_manager();
+                _req_proc_running.store(false);
+                __req_proc_manager();
             }
             __socket_error_hendler(ec);
         }
@@ -105,20 +64,6 @@ void serial::__req_poc()
     asio::async_write(*_socket, multibuf_tmp, _ev_loop->wrap(req_handler));
 }
 
-void serial::__proc_manager()
-{
-    bool cmp_tmp {false};
-
-    if (_proc_running.compare_exchange_strong(cmp_tmp, true))
-    {
-        if (_query_queue.empty()) {
-            _proc_running.store(false);
-            return;
-        }
-        __req_poc();
-    }
-}
-
 void serial::__resp_proc()
 {
     _reading_buff.release(2048);
@@ -148,8 +93,8 @@ void serial::__resp_proc()
                 work_done_report();
                 return;
             }
-            _proc_running.store(false);
-            __proc_manager();
+            _req_proc_running.store(false);
+            __req_proc_manager();
             return;
         }
 
@@ -157,6 +102,11 @@ void serial::__resp_proc()
     };
 
     _socket->async_read_some(asio::buffer(_reading_buff.data_top(), _reading_buff.size_avail()), _ev_loop->wrap(resp_handler));
+}
+
+bool serial::queues_is_empty()
+{
+    return (_sended_queries.empty() && _query_queue.empty());
 }
 
 } // namespace procs
