@@ -1,0 +1,4 @@
+#ifndef PROC_ABSTRACT_HPP
+#define PROC_ABSTRACT_HPP
+
+#endif // PROC_ABSTRACT_HPP
