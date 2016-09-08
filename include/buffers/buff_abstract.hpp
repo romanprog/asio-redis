@@ -5,6 +5,8 @@
 #include <string>
 #include <vector>
 #include <atomic>
+#include <memory>
+#include <mutex>
 
 class buff_abstract
 {
@@ -54,6 +56,8 @@ public:
         accept(sizeof(T));
     }
 
+    std::shared_ptr<std::mutex> read_mem_locker();
+
     void operator << (const std::string & str);
     void operator << (const char * str);
 
@@ -70,6 +74,7 @@ private:
     size_t _reserved {0};
     size_t _size {0};
     char * _cdata;
+    std::shared_ptr<std::mutex> _realloc_mux;
 
 
 };

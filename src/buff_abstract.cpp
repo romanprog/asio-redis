@@ -4,7 +4,8 @@
 
 
 buff_abstract::buff_abstract()
-    : _reserved(calculate_mem(_basic_block_size))
+    : _reserved(calculate_mem(_basic_block_size)),
+      _realloc_mux(std::make_shared<std::mutex>())
 {
     // In this case will be called _mem_calc() of base class, as need to allocate first memory block.
     // Override _mem_calc() in derived classes to make own memory managment in release() method
@@ -56,6 +57,7 @@ void buff_abstract::release(size_t size)
 
     if (_reserved_free <= size) {
         _reserved = calculate_mem(size);
+        std::lock_guard<std::mutex> _mem_lock(*_realloc_mux);
         _cdata = static_cast<char *>(realloc(_cdata, _reserved));
     }
     _size = _top_offset + size;
@@ -92,6 +94,11 @@ size_t buff_abstract::size_avail() const
 size_t buff_abstract::size_reserved() const
 {
     return _reserved;
+}
+
+std::shared_ptr<std::mutex> buff_abstract::read_mem_locker()
+{
+    return _realloc_mux;
 }
 
 void buff_abstract::operator <<(const char *str)

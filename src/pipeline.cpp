@@ -45,6 +45,8 @@ void pipeline::__req_poc()
 {
     auto req_handler = [this](std::error_code ec, std::size_t bytes_sent)
     {
+        _sending_buff.read_mem_locker()->unlock();
+
         if (!ec) {
             __reset_timeout();
             std::lock_guard<std::mutex> lock(_send_buff_mux);
@@ -65,12 +67,9 @@ void pipeline::__req_poc()
         _timer_is_started = true;
         __reset_timeout();
     }
-    const char * new_data_tmp =  _sending_buff.new_data();
-    size_t new_data_size_tmp = _sending_buff.new_data_size();
+    _sending_buff.read_mem_locker()->lock();
+    _socket->async_send(asio::buffer(_sending_buff.new_data(), _sending_buff.new_data_size()), _ev_loop->wrap(req_handler));
 
-
-    // _socket->async_send(asio::buffer(new_data_tmp, new_data_size_tmp), _ev_loop->wrap(req_handler));
-    asio::async_write(*_socket, asio::buffer(new_data_tmp, new_data_size_tmp), _ev_loop->wrap(req_handler));
 }
 
 void pipeline::__resp_proc()
