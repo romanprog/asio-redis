@@ -36,9 +36,9 @@ int main () {
     std::string _data_for_save;
 
     // Main client.
-    redis::client cl;
+    redis::client cl({1000, 1000});
     // Try connect to database, using future function and one master endpoint.
-    auto conn_f = cl.future_connect("127.0.0.1", 6379);
+    auto conn_f = cl.future_connect("8.8.8.8", 6379);
     conn_f.wait();
 
     auto ec = conn_f.get();

@@ -42,6 +42,26 @@ enum class respond_type
     empty
 };
 
+struct cl_options
+{
+    cl_options()
+    {
+
+    }
+
+    cl_options(unsigned c_tout_, unsigned r_tout_)
+        : conn_timeout(c_tout_),
+          resp_timeout(r_tout_)
+    {
+
+    }
+
+    // Client connection timeout in milliseconds.
+    unsigned conn_timeout {3000};
+    // Server respond timeout in milliseconds.
+    unsigned resp_timeout {3000};
+};
+
 
 class input_buff;
 

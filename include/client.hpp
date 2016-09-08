@@ -8,6 +8,7 @@
 #include "conn_pool.hpp"
 #include "procs/pipeline.hpp"
 #include "procs/serial.hpp"
+#include "types.hpp"
 
 
 namespace redis {
@@ -22,6 +23,8 @@ class client
 public:
     client();
     client(strand_ptr strand_);
+    client(const cl_options &opts_);
+    client(strand_ptr strand_, const cl_options &opts_);
 
     /// //////////////////////////// Connection section //////////////////////////////////////////////
     ///
@@ -150,6 +153,7 @@ public:
 
     void run_thread_worker();
     void disconnect();
+    void set_opts(const cl_options &opts_);
 
     ~client();
 
@@ -166,6 +170,8 @@ private:
     conn_mng_pool _slave_pool;
     pipeline_pool _slave_pipeline_pool;
     serial_pool _slave_serial_pool;
+
+    cl_options _opts;
 
     bool _connected {false};
     bool _have_error {false};

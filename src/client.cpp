@@ -20,6 +20,23 @@ client::client(strand_ptr strand_)
     reset_timer();
 }
 
+client::client(const cl_options &opts_)
+    : _ev_loop(std::make_shared<asio::strand>(_io)),
+      _worked_time(_ev_loop->get_io_service()),
+      _opts(opts_)
+{
+    reset_timer();
+    run_thread_worker();
+}
+
+client::client(strand_ptr strand_, const cl_options &opts_)
+    : _ev_loop(strand_),
+      _worked_time(_ev_loop->get_io_service()),
+      _opts(opts_)
+{
+        reset_timer();
+}
+
 void client::async_connect(const std::string &master_ip_, unsigned master_port_, confirm_cb cb_)
 {
     _master_conn = std::make_shared<conn_manager>(_ev_loop, master_ip_, master_port_);
@@ -111,6 +128,11 @@ void client::disconnect()
     _connected = false;
 }
 
+void client::set_opts(const cl_options & opts_)
+{
+    _opts = opts_;
+}
+
 void client::reset_timer()
 {
     _worked_time.expires_from_now(std::chrono::seconds(5));
@@ -147,9 +169,9 @@ void client::__init_master_pipeline(confirm_cb cb_)
             cb_(ec);
             return;
         }
-        _master_pipeline = std::make_shared<procs::pipeline>(_ev_loop, std::move(result));
+        _master_pipeline = std::make_shared<procs::pipeline>(_ev_loop, std::move(result), _opts.resp_timeout);
         __init_master_serial(cb_);
-    });
+    }, _opts.conn_timeout);
 }
 
 void client::__init_master_serial(confirm_cb cb_)
@@ -160,9 +182,9 @@ void client::__init_master_serial(confirm_cb cb_)
             cb_(ec);
             return;
         }
-        _master_serial = std::make_shared<procs::serial>(_ev_loop, std::move(result));
+        _master_serial = std::make_shared<procs::serial>(_ev_loop, std::move(result), _opts.resp_timeout);
         __ainit_spipeline_pool(cb_);
-    });
+    }, _opts.conn_timeout);
 }
 
 void client::__ainit_spipeline_pool(confirm_cb cb_, unsigned unit_num)
@@ -183,7 +205,7 @@ void client::__ainit_spipeline_pool(confirm_cb cb_, unsigned unit_num)
             return;
         }
 
-        _slave_pipeline_pool.add_unit(std::make_shared<procs::pipeline>(_ev_loop, std::move(result)), pref);
+        _slave_pipeline_pool.add_unit(std::make_shared<procs::pipeline>(_ev_loop, std::move(result), _opts.resp_timeout), pref);
 
         if (unit_num == _slave_pool.size() - 1) {
             __ainit_sserial_pool(cb_);
@@ -191,7 +213,7 @@ void client::__ainit_spipeline_pool(confirm_cb cb_, unsigned unit_num)
         }
         __ainit_spipeline_pool(cb_, unit_num + 1);
 
-    });
+    }, _opts.conn_timeout);
 }
 
 
@@ -207,14 +229,14 @@ void client::__ainit_sserial_pool(confirm_cb cb_, unsigned unit_num)
             return;
         }
 
-        _slave_serial_pool.add_unit(std::make_shared<procs::serial>(_ev_loop, std::move(result)), pref);
+        _slave_serial_pool.add_unit(std::make_shared<procs::serial>(_ev_loop, std::move(result), _opts.resp_timeout), pref);
 
         if (unit_num == _slave_pool.size() - 1) {
             cb_(asio::error_code());
             return;
         }
         __ainit_sserial_pool(cb_, unit_num + 1);
-    });
+    }, _opts.conn_timeout);
 }
 
 
