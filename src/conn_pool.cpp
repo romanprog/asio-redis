@@ -58,7 +58,7 @@ void conn_manager::async_get(get_soc_callback cb_, unsigned timeout_)
 
     asio::ip::tcp::endpoint endpoint(ip, _port);
     soc_p->async_connect(endpoint, _ev_loop->wrap(connection_handler));
-    conn_timer->expires_from_now(std::chrono::seconds(timeout_));
+    conn_timer->expires_from_now(std::chrono::milliseconds(timeout_));
     conn_timer->async_wait(_ev_loop->wrap(timeout_handler));
 
 }

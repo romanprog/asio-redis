@@ -4,12 +4,10 @@
 
 
 buff_abstract::buff_abstract()
-    : _reserved(calculate_mem(_basic_block_size)),
-      _realloc_mux(std::make_shared<std::mutex>())
+    : _realloc_mux(std::make_shared<std::mutex>()),
+      _reserved(calculate_mem(_basic_block_size))
 {
-    // In this case will be called _mem_calc() of base class, as need to allocate first memory block.
-    // Override _mem_calc() in derived classes to make own memory managment in release() method
-    // and other memory managers of derived classes.
+    // Allocate first memory block.
     _cdata = static_cast<char *>(malloc(_reserved));
 }
 
@@ -57,6 +55,9 @@ void buff_abstract::release(size_t size)
 
     if (_reserved_free <= size) {
         _reserved = calculate_mem(size);
+        // Lock mutex before memory reallocate.
+        // Thish mutex must be locked in pipeline processor before "async_send", and unlock primarily in confirmation callback.
+        // This prevents reading from freed memory.
         std::lock_guard<std::mutex> _mem_lock(*_realloc_mux);
         _cdata = static_cast<char *>(realloc(_cdata, _reserved));
     }

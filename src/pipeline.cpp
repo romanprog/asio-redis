@@ -31,8 +31,7 @@ void pipeline::push(redis_callback cb_, const std::string &query_, bool one_line
     }
 
     {
-        std::lock_guard<std::mutex> lock(_send_buff_mux);
-
+        std::lock_guard<std::mutex> lock(_push_mux);
         _cb_queue.push(cb_);
         _sending_buff.add_query(query_, one_line_query);
     }
@@ -49,7 +48,7 @@ void pipeline::__req_poc()
 
         if (!ec) {
             __reset_timeout();
-            std::lock_guard<std::mutex> lock(_send_buff_mux);
+            std::lock_guard<std::mutex> lock(_push_mux);
             _sending_buff.sending_report(bytes_sent);
         } else
         {

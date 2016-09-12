@@ -33,7 +33,7 @@ public:
     void release(size_t size__);
 
     // Reset buffer, clear data, and ser all counters to default.
-    // If needed, override this function - make sure to call @BuffAbstract::reset() in derived class!
+    // If neededhis function - make sure to call @BuffAbstract::reset() in derived class!
     void reset(bool soft_reset = false);
 
     // In base variant - return full size of buffer @_size (size_filled() + size_avail()). Can be overridden in derived classes.
@@ -67,6 +67,7 @@ protected:
     size_t top_offset() const;
     void change_data_top(size_t new_data_top);
     void reset_size();
+    std::shared_ptr<std::mutex> _realloc_mux;
 
 private:
     size_t _basic_block_size {1024};
@@ -74,7 +75,7 @@ private:
     size_t _reserved {0};
     size_t _size {0};
     char * _cdata;
-    std::shared_ptr<std::mutex> _realloc_mux;
+
 
 
 };

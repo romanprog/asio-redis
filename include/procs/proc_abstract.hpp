@@ -20,7 +20,7 @@ namespace procs {
 class proc_abstract
 {
 public:
-    proc_abstract(strand_ptr main_loop_, soc_ptr && soc_, unsigned timeout_ = 3);
+    proc_abstract(strand_ptr main_loop_, soc_ptr && soc_, unsigned timeout_);
     virtual ~proc_abstract();
     void set_timeout(unsigned timeout_);
 

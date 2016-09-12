@@ -25,7 +25,7 @@ void proc_abstract::__timeout_hendler()
 
 void proc_abstract::__reset_timeout()
 {
-    _timeout_clock.expires_from_now(std::chrono::seconds(_timeout_seconds));
+    _timeout_clock.expires_from_now(std::chrono::milliseconds(_timeout_seconds));
     _timeout_clock.async_wait([this](asio::error_code ec)
     {
         if (!ec)
