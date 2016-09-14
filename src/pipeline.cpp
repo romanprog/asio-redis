@@ -29,12 +29,18 @@ void pipeline::push(redis_callback cb_, const std::string &query_, bool one_line
         cb_(100, resp);
         return;
     }
+    // Waiting for free query space in buffer.
+    // Lock mutex for for undivided operation sequence (callback push
+    // to cb queue and add query to buffer).
+    std::unique_lock<std::mutex> lock(_buff_mux);
+    _sending_confirm_cond.wait(lock,
+                               [this, &query_](){ return !_sending_buff.check_overflow(query_.size()); }
+                              );
 
-    {
-        std::lock_guard<std::mutex> lock(_push_mux);
-        _cb_queue.push(cb_);
-        _sending_buff.add_query(query_, one_line_query);
-    }
+    _cb_queue.push(cb_);
+    _sending_buff.add_query(query_, one_line_query);
+    lock.unlock();
+
     __req_proc_manager();
 }
 
@@ -48,8 +54,12 @@ void pipeline::__req_poc()
 
         if (!ec) {
             __reset_timeout();
-            std::lock_guard<std::mutex> lock(_push_mux);
+            // Notify all clients, waiting for free space in buffer.
+            // Lock mutex for sending "data transfer report" for buffer
+            // (output_buff::sending_report modify buffer state).
+            std::lock_guard<std::mutex> lock(_buff_mux);
             _sending_buff.sending_report(bytes_sent);
+            _sending_confirm_cond.notify_all();
         } else
         {
             __socket_error_hendler(ec);
@@ -73,7 +83,7 @@ void pipeline::__req_poc()
 
 void pipeline::__resp_proc()
 {
-    _reading_buff.release(2048);
+    _reading_buff.release(resp_release_sz);
     auto resp_handler = [this](std::error_code ec, std::size_t bytes_sent)
     {
           if (ec) {

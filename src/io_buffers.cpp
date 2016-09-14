@@ -86,14 +86,23 @@ void output_buff::add_query(const std::string &query, bool plus_rn)
 
 }
 
+bool output_buff::check_overflow(size_t need_write)
+{
+    // manage_mem();
+    if ((top_offset() + need_write) >= max_buff_size - 100)
+        return true;
+
+    return false;
+}
+
 void output_buff::manage_mem()
 {
+    // Lock mutex before memory changes.
+    // Thish mutex must be locked in pipeline processor before "async_send", and unlock in the beginning of confirmation callback.
+    // This prevents reading from memory while managing.
+    std::lock_guard<std::mutex> _mem_lock(*_realloc_mux);
 
     if (nothing_to_send()) {
-        // Lock mutex before memory changes.
-        // Thish mutex must be locked in pipeline processor before "async_send", and unlock in the beginning of confirmation callback.
-        // This prevents reading from memory while managing.
-        std::lock_guard<std::mutex> _mem_lock(*_realloc_mux);
         reset(true);
         _sended_offset.store(0);
         return;
@@ -105,15 +114,9 @@ void output_buff::manage_mem()
     if ((top_offset() - new_data_size()) < new_data_size())
         return;
 
-    // Lock mutex before memory changes.
-    // Thish mutex must be locked in pipeline processor before "async_send", and unlock in the beginning of confirmation callback.
-    // This prevents reading from memory while managing.
-    std::lock_guard<std::mutex> _mem_lock(*_realloc_mux);
     memcpy(vdata(), new_data(), new_data_size());
     change_data_top(new_data_size());
     _sended_offset.store(0);
-
-
 }
 
 

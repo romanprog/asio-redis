@@ -68,9 +68,11 @@ protected:
     void change_data_top(size_t new_data_top);
     void reset_size();
     std::shared_ptr<std::mutex> _realloc_mux;
+    // 10 Mb
+    const size_t max_buff_size {10485760};
 
 private:
-    size_t _basic_block_size {1024};
+    const size_t _basic_block_size {1024};
     std::atomic<size_t> _top_offset {0};
     size_t _reserved {0};
     size_t _size {0};

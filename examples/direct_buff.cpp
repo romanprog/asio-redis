@@ -38,7 +38,7 @@ int main () {
     // Main client.
     redis::client cl({1000, 1000});
     // Try connect to database, using future function and one master endpoint.
-    auto conn_f = cl.future_connect("127.0.0.1", 8888);
+    auto conn_f = cl.future_connect("127.0.0.1", 6379);
     conn_f.wait();
 
     auto ec = conn_f.get();
@@ -53,8 +53,8 @@ int main () {
     }
 
     profiler::global().startpoint();
-    // Fill string to random data. Size - 10K.
-    hstrings::rand_str(_data_for_save, 10000);
+    // Fill string to random data. Size - 50K.
+    hstrings::rand_str(_data_for_save, 50000);
 
     redis::query<redis::cmd::key::del> test_cmd("testttt", "123", "24fds", "sadasd");
 

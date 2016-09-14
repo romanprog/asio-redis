@@ -37,6 +37,12 @@ protected:
     unsigned _timeout_seconds;
     bool _timer_is_started {false};
 
+    // Waiting for free space in buffer.
+    std::condition_variable _sending_confirm_cond;
+
+    // 2 Kb
+    const size_t resp_release_sz {2048};
+
     std::atomic<bool> _req_proc_running {false};
     std::atomic<bool> _stop_in_progress {false};
 

@@ -24,7 +24,7 @@ public:
 private:
 
     threadsafe::queue<redis_callback> _cb_queue;
-    std::mutex _push_mux;
+    std::mutex _buff_mux;
 
     void __req_poc() override;
     void __resp_proc() override;

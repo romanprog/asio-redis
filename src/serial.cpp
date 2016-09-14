@@ -54,7 +54,10 @@ void serial::__req_poc()
 
         mq_counter ++;
     }
-
+    {
+        std::lock_guard<std::mutex> lock(_buff_mux);
+        _sending_confirm_cond.notify_all();
+    }
     // Start timer first time for timeout handling.
     if (!_timer_is_started) {
         _timer_is_started = true;
@@ -66,7 +69,7 @@ void serial::__req_poc()
 
 void serial::__resp_proc()
 {
-    _reading_buff.release(2048);
+    _reading_buff.release(resp_release_sz);
     auto resp_handler = [this](std::error_code ec, std::size_t bytes_sent)
     {
         __reset_timeout();

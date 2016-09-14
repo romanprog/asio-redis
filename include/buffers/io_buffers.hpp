@@ -43,6 +43,8 @@ public:
     size_t new_data_size();
     // Add new query tu buffer line. If %plus_rn is true - add '\r\n' at the end of %query.
     void add_query(const std::string &query, bool plus_rn = false);
+    // Check @max_buff_size overflow whith new query @need_write size.
+    bool check_overflow(size_t need_write);
 
 private:
     // Memory management: cleaning, fast reset, data transfer on free sites

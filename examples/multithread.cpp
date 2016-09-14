@@ -17,7 +17,7 @@ auto empty_handler = [](redis::rds_err er, const redis::resp_data & res)
 };
 
 std::atomic<int> qcounter{0};
-unsigned loops_count {900000};
+unsigned loops_count {3000000};
 
 int main () {
     using namespace redis;
@@ -32,7 +32,7 @@ int main () {
             double mls = profiler::global().get_duration("qps");
             // long
             double qps = (static_cast<double>(loops_count)/(mls?mls:mls+1))*1000000;
-            std::cout << "Loops: " << loops_count  << ", time: " << mls << "mks, " << qps << "qps" << std::endl;
+            std::cout << "Loops: " << loops_count  << ", time: " << mls/1000000 << "sec, " << qps << "qps" << std::endl;
         }
     };
 
@@ -53,16 +53,17 @@ int main () {
 
     auto funct = [&incr_query, &cl, &buff_q_handler]()
     {
-        for (int i = 0; i < loops_count/2; ++i) {
+        for (int i = 0; i < loops_count/3; ++i) {
                 cl.async_send(incr_query , buff_q_handler);
         }
 
     };
 
+    // Run queryes in 3 threads.
     std::thread t1(funct);
     std::thread t2(funct);
-
     funct();
+
     t1.join();
     t2.join();
 

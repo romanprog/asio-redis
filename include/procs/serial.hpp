@@ -25,13 +25,26 @@ public:
             return;
         }
 
+        // Waiting for free query space in buffer.
+        // Lock mutex for for undivided operation sequence (callback push
+        // to cb queue and add query to buffer).
+
+        std::unique_lock<std::mutex> lock(_buff_mux);
+        _sending_confirm_cond.wait(lock,
+                                   [this](){ return _query_queue.size() <= max_buff_size; }
+                    );
          _query_queue.push(serial_query_adapter(q_, cb_));
+        lock.unlock();
+
+
          __req_proc_manager();
     }
 
 private:
 
     const size_t max_query_in_multibuff {10};
+    const size_t max_buff_size {100};
+    std::mutex _buff_mux;
     threadsafe::queue<serial_query_adapter> _query_queue;
     threadsafe::queue<serial_query_adapter> _sended_queries;
 

@@ -45,8 +45,6 @@ bool buff_abstract::accept(size_t bytes_readed)
 
 void buff_abstract::release(size_t size)
 {
-    if (_size + size > 80000000)
-        throw std::out_of_range("Buffer overflow. Max - 80Mb");
 
     if (size < size_avail())
         return;
@@ -54,12 +52,16 @@ void buff_abstract::release(size_t size)
     size_t _reserved_free = _reserved - _top_offset;
 
     if (_reserved_free <= size) {
+
+        if (_top_offset + size > max_buff_size)
+            throw std::out_of_range("Buffer overflow. Max - " + std::to_string(max_buff_size/1000) + "Kb");
+
         _reserved = calculate_mem(size);
         // Lock mutex before memory reallocate.
         // Thish mutex must be locked in pipeline processor before "async_send", and unlock primarily in confirmation callback.
         // This prevents reading from freed memory.
         std::lock_guard<std::mutex> _mem_lock(*_realloc_mux);
-        _cdata = static_cast<char *>(realloc(_cdata, _reserved));
+        _cdata = static_cast<char *>(realloc(_cdata, std::min(_reserved, max_buff_size)));
     }
     _size = _top_offset + size;
 }
@@ -101,6 +103,7 @@ std::shared_ptr<std::mutex> buff_abstract::read_mem_locker()
 {
     return _realloc_mux;
 }
+
 
 void buff_abstract::operator <<(const char *str)
 {
