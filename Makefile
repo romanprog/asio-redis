@@ -1,4 +1,5 @@
 CXX:=$(shell sh -c 'type $(CXX) >/dev/null 2>/dev/null && echo $(CXX) || echo g++')
+#CXX = clang++-3.8
 
 INSTALL = install
 
@@ -11,7 +12,8 @@ WARNINGS =     \
                 -Wall \
                 -Wno-sign-compare \
                 -Wno-deprecated-register \
-                -Wno-unused-function
+                -Wno-unused-function \
+                -Winline
 
 DEBUG = -g
 
@@ -23,7 +25,7 @@ CXXFLAGS = $(OPTIMIZATION) -fPIC -fstack-protector $(CFLAGS) $(WARNINGS) $(DEBUG
 
 STDLIB =
 ifeq ($(shell uname -s), FreeBSD)
-STDLIB +=  -stdlib=libc++
+STDLIB +=  -stdlib=libstdc++
 endif
 CXXFLAGS +=  $(STDLIB)
 

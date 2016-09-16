@@ -174,8 +174,6 @@ private:
     cl_options _opts;
 
     bool _connected {false};
-    bool _have_error {false};
-
 
     void reset_timer();
 

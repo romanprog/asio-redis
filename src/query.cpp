@@ -48,4 +48,47 @@ std::vector<asio::const_buffer> build_multibuffer(const std::string &query_, con
     return res;
 }
 
+void q_fast_build(std::string & query_, const char * const cmd_)
+{
+    size_t cmd_len = std::strlen(cmd_);
+    auto max_size = query_pref_max_size + cmd_len + 2;
+    query_.resize(max_size);
+    size_t added_size = snprintf(&query_[0], max_size,
+            "*1\r\n$%d\r\n%s\r\n",
+            static_cast<unsigned>(cmd_len), cmd_);
+
+    query_.resize(added_size);
+}
+
+void q_fast_build(std::string &query_, const char * cmd_, const char * key_)
+{
+    size_t cmd_len = std::strlen(cmd_);
+    size_t key_len = std::strlen(key_);
+    auto max_size = query_pref_max_size*2 + cmd_len + key_len + 4;
+    query_.resize(max_size);
+    size_t added_size = snprintf(&query_[0], max_size,
+            "*2\r\n$%d\r\n%s\r\n$%d\r\n%s\r\n",
+            static_cast<unsigned>(cmd_len), cmd_,
+            static_cast<unsigned>(key_len), key_);
+
+    query_.resize(added_size);
+}
+
+void q_fast_build(std::string &query_, const char * const cmd_, const char * const key_, const char * const val_)
+{
+    size_t cmd_len = std::strlen(cmd_);
+    size_t key_len = std::strlen(key_);
+    size_t val_len = std::strlen(val_);
+    auto max_size = query_pref_max_size*3 + cmd_len + key_len + val_len + 6;
+    query_.resize(max_size);
+    size_t added_size = snprintf(&query_[0], max_size,
+            "*2\r\n$%d\r\n%s\r\n$%d\r\n%s\r\n%d\r\n%s\r\n",
+            static_cast<unsigned>(cmd_len), cmd_,
+            static_cast<unsigned>(key_len), key_,
+            static_cast<unsigned>(val_len), val_
+            );
+
+    query_.resize(added_size);
+}
+
 }

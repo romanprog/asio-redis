@@ -15,7 +15,7 @@ void input_buff::when_reseted()
 
 size_t input_buff::unparsed_size()
 {
-    auto res = top_offset() - _unparsed_offset;
+    int res = top_offset() - _unparsed_offset;
     if (res < 0)
         return 0;
     return res;

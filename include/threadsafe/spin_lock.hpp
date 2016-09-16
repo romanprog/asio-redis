@@ -11,7 +11,7 @@ class spin_lock
 {
 public:
     spin_lock()
-        : _lock_flag(ATOMIC_FLAG_INIT)
+        : _lock_flag(0)
     {}
 
     void lock()

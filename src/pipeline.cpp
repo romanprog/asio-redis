@@ -95,6 +95,8 @@ void pipeline::__resp_proc()
 
           _reading_buff.accept(bytes_sent);
 
+
+
           while (_resp_parser.parse_one(_respond))
           {
               redis_callback cb;

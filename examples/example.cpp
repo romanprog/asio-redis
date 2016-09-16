@@ -98,8 +98,28 @@ int main () {
     else {
         std::cout << "Connected!" <<std::endl;
     }
+    profiler::global().startpoint();
+    for (int i = 1; i < 1000000; ++i)
+        query<cmd::incr> incr_query("test", "fsadfsdaf");
 
-    query<cmd::incr> incr_query("test");
+    profiler::global().checkpoint("first");
+    double mls = profiler::global().get_duration("first");
+    double qps = (static_cast<double>(1000000)/(mls?mls:mls+1))*1000000;
+    std::cout << "Loops: " << loops_count  << ", time: " << mls << "mks, " << qps << "qps" << std::endl;
+
+    for (int i = 1; i < 1000000; ++i) {
+        query<cmd::custom> set_test1("test", "test");
+        int ik = 1;
+    }
+
+    profiler::global().checkpoint("second");
+
+    mls = profiler::global().get_duration("second");
+    qps = (static_cast<double>(1000000)/(mls?mls:mls+1))*1000000;
+    std::cout << "Loops: " << loops_count  << ", time: " << mls << "mks, " << qps << "qps" << std::endl;
+
+
+    query<cmd::set> incr_query("test");
     profiler::global().startpoint();
 
 

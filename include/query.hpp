@@ -16,6 +16,10 @@ namespace redis {
 size_t ins_query_prefix(std::string & query_, unsigned pcount_);
 void add_query_part(std::string & query_, const char * part_);
 
+void q_fast_build(std::string & query_, const char * const cmd_);
+void q_fast_build(std::string & query_, const char * const cmd_, const char * const key_);
+void q_fast_build(std::string & query_, const char * const cmd_, const char * const key_, const char * const val_);
+
 std::vector<asio::const_buffer> build_multibuffer(const std::string & query_,
                                                   const qbuff_pos_list & _ext_buffs_list);
 
@@ -24,92 +28,80 @@ class  query
 {
 public:
 
-    // Constructor overload for redis commands with 1 arguments.
-    template <typename T = CmdType, typename BType = ExtBuffType,
-              typename = std::enable_if_t<T::params_count == 1 &&
-                                          std::is_same<BType, redis::buff::common_buffer>::value
-                                          >
-              >
-    explicit query(const std::string key_)
-        : _query(new std::string())
-
-    {
-        size_t name_len = std::strlen(CmdType::name);
-        auto max_size = query_pref_max_size*2 + name_len + key_.size() + 4;
-        _query->resize(max_size);
-        size_t added_size = snprintf(&((*_query)[0]), max_size,
-                                     "*2\r\n$%d\r\n%s\r\n$%d\r\n%s\r\n",
-                                     static_cast<unsigned>(name_len), CmdType::name,
-                                     static_cast<unsigned>(key_.size()), key_.c_str());
-
-        _query->resize(added_size);
-        return;
-    }
-
-    // Constructor overload for redis commands with 2 arguments.
-    template <typename T = CmdType, typename BType = ExtBuffType,
-              typename = std::enable_if_t<T::params_count == 2 &&
-                                          std::is_same<BType, redis::buff::common_buffer>::value
-                                          >
-              >
-    explicit query(const std::string & key_, const std::string & value_)
-        : _query(new std::string())
-    {
-        size_t name_len = std::strlen(CmdType::name);
-        auto max_size = query_pref_max_size*3 + key_.size() + value_.size() + 6;
-        _query->resize(max_size);
-        size_t added_size = snprintf(&((*_query)[0]), max_size,
-                                     "*3\r\n$%d\r\n%s\r\n$%d\r\n%s\r\n$%d\r\n%s\r\n",
-                                     static_cast<unsigned>(name_len), CmdType::name,
-                                     static_cast<unsigned>(key_.size()), key_.c_str(),
-                                     static_cast<unsigned>(value_.size()), value_.c_str()
-                );
-
-        _query->resize(added_size);
-        return;
-    }
-
-    // Constructor overload for queryes without arguments.
     template <typename T = CmdType,
-              typename = std::enable_if_t<T::params_count == 0>
+              typename = std::enable_if_t<!std::is_same<T, redis::cmd::custom>::value>
               >
-    explicit query()
+    query()
         : _query(new std::string())
     {
-        // Build query. See description in overload below.
-        _query->resize(query_pref_max_size);
-        _build_RESP_next(CmdType::name);
-        ins_query_prefix(*_query, _pcount);
+        q_fast_build(*_query, T::name);
     }
 
-    // Overload for queryes with arguments.
     template <typename T = CmdType,
-              typename ...Args,
-              typename = std::enable_if_t<T::params_count < 0 ||
-                                          std::is_same<ExtBuffType, redis::buff::direct_write_buffer>::value>
+              typename = std::enable_if_t<!std::is_same<T, redis::cmd::custom>::value>
               >
-    explicit query(Args && ...args)
+    query(const std::string & key_)
+        : _query(new std::string())
+    {
+        q_fast_build(*_query, T::name, key_.c_str());
+    }
+
+    template <typename T = CmdType,
+              typename = std::enable_if_t<!std::is_same<T, redis::cmd::custom>::value>
+              >
+    query(const char * const key_)
+        : _query(new std::string())
+    {
+        q_fast_build(*_query, T::name, key_);
+    }
+
+    template <typename T = CmdType,
+              typename = std::enable_if_t<!std::is_same<T, redis::cmd::custom>::value>
+              >
+    query(const std::string & key_, const std::string & val_)
+        : _query(new std::string())
+    {
+        q_fast_build(*_query, T::name, key_.c_str(), val_.c_str());
+    }
+
+    template <typename T = CmdType,
+              typename = std::enable_if_t<!std::is_same<T, redis::cmd::custom>::value>
+              >
+    query(const char * const key_, const std::string & val_)
+        : _query(new std::string())
+    {
+        q_fast_build(*_query, T::name, key_, val_.c_str());
+    }
+
+    template <typename T = CmdType,
+              typename = std::enable_if_t<!std::is_same<T, redis::cmd::custom>::value>
+              >
+    query(const std::string & key_, const char * const val_)
+        : _query(new std::string())
+    {
+        q_fast_build(*_query, T::name, key_.c_str(), val_);
+    }
+
+    template <typename T = CmdType,
+              typename = std::enable_if_t<!std::is_same<T, redis::cmd::custom>::value>
+              >
+    query(const char * const key_, const char * const val_)
+        : _query(new std::string())
+    {
+        q_fast_build(*_query, T::name, key_, val_);
+    }
+
+    template <typename ...Args>
+    query(Args && ...args)
         : _query(new std::string())
 
     {
-        // Count of all parameters for redis query will be known only after _build_RESP_query() finished work.
-        // For maximum performance and to avoid memory relocation - reserved additional memory for
-        // array lenth in the begining of query string.
-        // Maximum text length of redis list size (2^32 - 1) + length of "*\r\n".
-        //  unsigned pref_max_size = max_redis_list_size() + 3;
-        _query->resize(query_pref_max_size);
-        // Debug filling.
-        // std::fill(_query.begin(), _query.end(), '0');
-
-        // Recurcive query building.
-        _build_RESP_next(CmdType::name, std::forward<Args>(args)...);
-
-        // Add prefix "*%count%\r\n" (see RESP protocol docs).
-        size_t trimed = ins_query_prefix(*_query, _pcount);
-
-        // Decreasing external direct buffers offsets.
-        for (auto & pos : _ext_buffs_list)
-            pos.first -= trimed;
+        if (!std::is_same<CmdType, redis::cmd::custom>::value) {
+            std::string tmp(CmdType::name);
+            _build_RESP(tmp, std::forward<Args>(args)...);
+        } else {
+            _build_RESP(std::forward<Args>(args)...);
+        }
 
     }
 
@@ -141,6 +133,27 @@ protected:
 
     friend class serial_query_adapter;
 
+    template <typename ...Args,
+              typename T = CmdType>
+    inline void _build_RESP(Args && ...args)
+    {
+        // Count of all parameters for redis query will be known only after _build_RESP_query() finished work.
+        // For maximum performance and to avoid memory relocation - reserved additional memory for
+        // array lenth in the begining of query string.
+        // Maximum text length of redis list size (2^32 - 1) + length of "*\r\n".
+        _query->resize(query_pref_max_size);
+
+        // Recurcive query building.
+        _build_RESP_next(std::forward<Args>(args)...);
+
+        // Add prefix "*%count%\r\n" (see RESP protocol docs).
+        size_t trimed = ins_query_prefix(*_query, _pcount);
+
+        // Decreasing external direct buffers offsets.
+        for (auto & pos : _ext_buffs_list)
+            pos.first -= trimed;
+    }
+
     // Recursive query builder.
     template <typename ...Args>
     void _build_RESP_next(const std::string & part_, Args && ...args)
@@ -149,7 +162,7 @@ protected:
         _build_RESP_next(std::forward<Args>(args)...);
     }
 
-    inline void _build_RESP_next(const std::string & part_)
+    void _build_RESP_next(const std::string & part_)
     {
         _build_RESP_next(part_.c_str());
     }
@@ -174,7 +187,7 @@ protected:
         _build_RESP_next(std::forward<Args>(args)...);
     }
 
-    inline void _build_RESP_next(const std::vector<std::string> & part_)
+    void _build_RESP_next(const std::vector<std::string> & part_)
     {
         for (auto & str : part_)
             _build_RESP_next(str.c_str());
@@ -187,7 +200,7 @@ protected:
         _build_RESP_next(std::forward<Args>(args)...);
     }
 
-    inline void _build_RESP_next(int part_)
+    void _build_RESP_next(int part_)
     {
         _build_RESP_next(std::to_string(part_).c_str());
     }
@@ -203,7 +216,7 @@ protected:
         _build_RESP_next(std::forward<Args>(args)...);
     }
 
-    template <typename T, typename ...Args, typename CT = CmdType, typename BT = ExtBuffType,
+    template <typename T, typename CT = CmdType, typename BT = ExtBuffType,
               typename = std::enable_if_t<CT::enable_direct_write_buff &&
                                           std::is_same<BT, buff::direct_write_buffer>::value
                                           >
@@ -221,15 +234,16 @@ protected:
                                                                                      direct_buff_.size())));
         ++_pcount;
     }
+
 };
 
 
 class serial_query_adapter
 {
     redis_callback _cb;
-    unsigned _pcount{0};
     std::shared_ptr<std::string> _query;
     qbuff_pos_list _ext_buffs_list;
+
 public:
 
     serial_query_adapter()
@@ -240,7 +254,6 @@ public:
     template <typename qT, typename cbType>
     explicit serial_query_adapter(const qT & qu_, cbType && cb_)
         : _cb(std::forward<cbType>(cb_)),
-          _pcount(qu_._pcount),
           _query(qu_._query),
           _ext_buffs_list(qu_._ext_buffs_list)
     {
