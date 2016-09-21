@@ -20,7 +20,7 @@ namespace procs {
 class proc_abstract
 {
 public:
-    proc_abstract(strand_ptr main_loop_, soc_ptr && soc_, unsigned timeout_);
+    proc_abstract(strand_ptr main_loop_, soc_ptr && soc_, unsigned timeout_, disconection_cb dh_ = nullptr);
     virtual ~proc_abstract();
     void set_timeout(unsigned timeout_);
 
@@ -31,6 +31,7 @@ protected:
     input_buff & _reading_buff;
     output_buff _sending_buff;
     redis::resp_data _respond;
+    disconection_cb _dsconn_handler;
 
     // Timer
     asio::steady_timer _timeout_clock;
@@ -51,6 +52,7 @@ protected:
     void stop();
     void work_done_report();
     void __socket_error_hendler(std::error_code ec);
+    bool _error_status {false};
 
     // Timer
     void __timeout_hendler();

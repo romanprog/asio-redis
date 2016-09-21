@@ -173,6 +173,8 @@ private:
 
     cl_options _opts;
 
+    void __proc_disconnect_handler(asio::error_code ec);
+
     bool _connected {false};
 
     void reset_timer();

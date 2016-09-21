@@ -6,8 +6,8 @@ namespace redis {
 
 namespace procs {
 
-serial::serial(strand_ptr main_loop_, soc_ptr &&soc_, unsigned timeout_)
-    :proc_abstract::proc_abstract(std::move(main_loop_), std::move(soc_), timeout_)
+serial::serial(strand_ptr main_loop_, soc_ptr &&soc_, unsigned timeout_, disconection_cb dh_)
+    :proc_abstract::proc_abstract(std::move(main_loop_), std::move(soc_), timeout_, dh_)
 { }
 
 serial::~serial()

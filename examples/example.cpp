@@ -11,66 +11,16 @@
 #include <atomic>
 
 #include "asio-redis.hpp"
+#include "../include/threadsafe/conn_queue.hpp"
 #include "../include/utils/h_strings.hpp"
 #include "../profiler/profiler.hpp"
 
-auto empty_handler = [](redis::rds_err er, const redis::resp_data & res)
-{
-};
 
 std::atomic<int> qcounter{0};
-unsigned loops_count {1000000};
-
-// Condition tests
-std::mutex mux;
-std::condition_variable cond;
-std::atomic<bool> cond_b {false};
-int iii {0};
-
-bool cond_f()
-{
-    if (cond_b) {
-        ++iii;
-        if (iii == 20) {
-            iii = 0;
-            cond_b = false;
-        }
-        return true;
-    }
-    return false;
-}
+unsigned loops_count {10000000};
 
 int main () {
 
-//    auto thread_func = []()
-//    {
-//        for (;;) {
-//            std::unique_lock<std::mutex> lc(mux);
-//            cond.wait(lc, cond_f);
-//            // Some work.
-//            std::thread::id tid = std::this_thread::get_id();
-//            std::cout << tid << " Worked!" << std::endl;
-//            lc.unlock();
-
-//            std::this_thread::sleep_for(std::chrono::microseconds(500));
-//        }
-//    };
-
-//    std::thread t1 {thread_func};
-//    std::thread t2 {thread_func};
-//    for (;;)
-//    {
-//        std::string i;
-//        std::getline(std::cin, i);
-//        std::lock_guard<std::mutex> lc {mux};
-//        if (i == "yes")
-//            cond_b = true;
-//        cond.notify_all();
-//    }
-
-//    t1.join();
-//    t2.join();
-//    exit(0);
     using namespace redis;
 
 
@@ -98,30 +48,9 @@ int main () {
     else {
         std::cout << "Connected!" <<std::endl;
     }
-    profiler::global().startpoint();
-    for (int i = 1; i < 1000000; ++i)
-        query<cmd::incr> incr_query("test", "fsadfsdaf");
-
-    profiler::global().checkpoint("first");
-    double mls = profiler::global().get_duration("first");
-    double qps = (static_cast<double>(1000000)/(mls?mls:mls+1))*1000000;
-    std::cout << "Loops: " << loops_count  << ", time: " << mls << "mks, " << qps << "qps" << std::endl;
-
-    for (int i = 1; i < 1000000; ++i) {
-        query<cmd::custom> set_test1("test", "test");
-        int ik = 1;
-    }
-
-    profiler::global().checkpoint("second");
-
-    mls = profiler::global().get_duration("second");
-    qps = (static_cast<double>(1000000)/(mls?mls:mls+1))*1000000;
-    std::cout << "Loops: " << loops_count  << ", time: " << mls << "mks, " << qps << "qps" << std::endl;
-
 
     query<cmd::set> incr_query("test");
     profiler::global().startpoint();
-
 
     for (int i = 0; i < loops_count/100; ++i) {
         for (int j = 0; j < 100; ++j)

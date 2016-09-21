@@ -57,9 +57,9 @@ struct cl_options
     }
 
     // Client connection timeout in milliseconds.
-    unsigned conn_timeout {3000};
+    unsigned conn_timeout {30000};
     // Server respond timeout in milliseconds.
-    unsigned resp_timeout {3000};
+    unsigned resp_timeout {30000};
 };
 
 
@@ -87,6 +87,7 @@ struct resp_string
 
 };
 
+
 struct srv_endpoint
 {
     srv_endpoint(const std::string & ip_, unsigned port_, unsigned pref_ = 10)
@@ -113,6 +114,7 @@ using strand_ptr = std::shared_ptr<asio::strand>;
 using conn_callback = std::function<void (asio::error_code&)>;
 using get_soc_callback = std::function<void (asio::error_code&, soc_ptr && result)>;
 using get_socs_list_callback = std::function<void (asio::error_code&, std::vector<soc_ptr> && result)>;
+using disconection_cb = std::function<void(asio::error_code)>;
 
 } // namespace redis
 

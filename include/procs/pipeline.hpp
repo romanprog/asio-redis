@@ -15,7 +15,7 @@ class pipeline : public proc_abstract
 {
 public:
 
-    pipeline(strand_ptr main_loop_, soc_ptr && soc_, unsigned timeout_ = 3);
+    pipeline(strand_ptr main_loop_, soc_ptr && soc_, unsigned timeout_, disconection_cb dh_ = nullptr);
     ~pipeline();
 
     void push(redis_callback cb_, const std::string &query_, bool one_line_query = false);

@@ -1,6 +1,7 @@
 #include "../include/client.hpp"
 
 #include <asio.hpp>
+#include <functional>
 
 namespace redis {
 
@@ -156,6 +157,11 @@ client::~client()
     _thread_worker.join();
 }
 
+void client::__proc_disconnect_handler(asio::error_code ec)
+{
+    disconnect();
+}
+
 void client::__init_master_pipeline(confirm_cb cb_)
 {
     if (!_master_conn) {
@@ -169,7 +175,9 @@ void client::__init_master_pipeline(confirm_cb cb_)
             cb_(ec);
             return;
         }
-        _master_pipeline = std::make_shared<procs::pipeline>(_ev_loop, std::move(result), _opts.resp_timeout);
+        _master_pipeline = std::make_shared<procs::pipeline>(_ev_loop, std::move(result),
+                                                             _opts.resp_timeout,
+                                                             std::bind(&client::__proc_disconnect_handler, this, std::placeholders::_1));
         __init_master_serial(cb_);
     }, _opts.conn_timeout);
 }
@@ -182,7 +190,9 @@ void client::__init_master_serial(confirm_cb cb_)
             cb_(ec);
             return;
         }
-        _master_serial = std::make_shared<procs::serial>(_ev_loop, std::move(result), _opts.resp_timeout);
+        _master_serial = std::make_shared<procs::serial>(_ev_loop, std::move(result),
+                                                         _opts.resp_timeout,
+                                                         std::bind(&client::__proc_disconnect_handler, this, std::placeholders::_1));
         __ainit_spipeline_pool(cb_);
     }, _opts.conn_timeout);
 }
@@ -204,8 +214,12 @@ void client::__ainit_spipeline_pool(confirm_cb cb_, unsigned unit_num)
             cb_(ec);
             return;
         }
+        auto proc_tmp = std::make_shared<procs::pipeline>(_ev_loop,
+                                                          std::move(result),
+                                                          _opts.resp_timeout,
+                                                          std::bind(&client::__proc_disconnect_handler, this, std::placeholders::_1));
 
-        _slave_pipeline_pool.add_unit(std::make_shared<procs::pipeline>(_ev_loop, std::move(result), _opts.resp_timeout), pref);
+        _slave_pipeline_pool.add_unit(std::move(proc_tmp), pref);
 
         if (unit_num == _slave_pool.size() - 1) {
             __ainit_sserial_pool(cb_);
@@ -229,7 +243,12 @@ void client::__ainit_sserial_pool(confirm_cb cb_, unsigned unit_num)
             return;
         }
 
-        _slave_serial_pool.add_unit(std::make_shared<procs::serial>(_ev_loop, std::move(result), _opts.resp_timeout), pref);
+        auto proc_tmp = std::make_shared<procs::serial>(_ev_loop,
+                                                          std::move(result),
+                                                          _opts.resp_timeout,
+                                                          std::bind(&client::__proc_disconnect_handler, this, std::placeholders::_1));
+
+        _slave_serial_pool.add_unit(std::move(proc_tmp), pref);
 
         if (unit_num == _slave_pool.size() - 1) {
             cb_(asio::error_code());

@@ -28,6 +28,8 @@ class  query
 {
 public:
 
+    // Section of fast constructor overloads.
+    // For the most common use.
     template <typename T = CmdType,
               typename = std::enable_if_t<!std::is_same<T, redis::cmd::custom>::value>
               >
@@ -91,6 +93,7 @@ public:
         q_fast_build(*_query, T::name, key_, val_);
     }
 
+    // Default constructor overload.
     template <typename ...Args>
     query(Args && ...args)
         : _query(new std::string())

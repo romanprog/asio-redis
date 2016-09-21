@@ -18,6 +18,7 @@ void conn_manager::async_get(get_soc_callback cb_, unsigned timeout_)
 {
     soc_ptr soc_p;
     asio::error_code ec;
+
     if (_cache.get_first_free(soc_p)) {
         cb_(ec, std::move(soc_p));
         return;
@@ -63,6 +64,21 @@ void conn_manager::async_get(get_soc_callback cb_, unsigned timeout_)
 
 }
 
+ std::shared_ptr<asio::ip::tcp::socket> conn_manager::debug_get()
+{
+     std::shared_ptr<asio::ip::tcp::socket> soc_p;
+     asio::error_code ec;
+
+     if (_cache.get_first_free(soc_p)) {
+         return soc_p;
+     }
+
+     asio::io_service io;
+     soc_p.reset(new asio::ip::tcp::socket(io));
+     _cache.push(soc_p);
+     return soc_p;
+}
+
 soc_ptr conn_manager::get(asio::error_code & err, unsigned timeout_)
 {
     std::promise<soc_ptr> conn_prom;
@@ -76,6 +92,16 @@ soc_ptr conn_manager::get(asio::error_code & err, unsigned timeout_)
     async_get(conn_handler, timeout_);
     conn_fut.wait();
     return conn_fut.get();
+}
+
+bool conn_manager::operator==(const conn_manager &other)
+{
+    return (_ip == other._ip && _port == other._port);
+}
+
+void conn_manager::clear_cache()
+{
+    _cache.clear_free();
 }
 
 } //namespace redis

@@ -1,14 +1,17 @@
 #include "../include/procs/proc_abstract.hpp"
+#include <iostream>
 
 namespace redis {
 namespace procs {
 
-proc_abstract::proc_abstract(redis::strand_ptr main_loop_, redis::soc_ptr &&soc_, unsigned timeout_)
+proc_abstract::proc_abstract(redis::strand_ptr main_loop_, redis::soc_ptr &&soc_, unsigned timeout_, disconection_cb dh_)
     : _ev_loop(std::move(main_loop_)),
       _socket(std::move(soc_)),
       _reading_buff(_resp_parser.buff()),
+      _dsconn_handler(dh_),
       _timeout_clock(_ev_loop->get_io_service()),
       _timeout_seconds(timeout_)
+
 {
 }
 
@@ -63,7 +66,14 @@ void proc_abstract::work_done_report()
 
 void proc_abstract::__socket_error_hendler(std::error_code ec)
 {
-     throw std::logic_error(ec.message());
+    // Do this once.
+    if (!_error_status) {
+        _error_status = true;
+        if (_dsconn_handler)
+            _dsconn_handler(ec);
+        std::cout << ec.message() << std::endl;
+        // throw std::logic_error(ec.message());
+    }
 }
 
 void proc_abstract::set_timeout(unsigned timeout_)

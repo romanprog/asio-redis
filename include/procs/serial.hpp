@@ -11,7 +11,7 @@ class serial : public proc_abstract
 {
 public:
 
-    serial(strand_ptr main_loop_, soc_ptr && soc_, unsigned timeout_ = 3);
+    serial(strand_ptr main_loop_, soc_ptr && soc_, unsigned timeout_, disconection_cb dh_ = nullptr);
     ~serial();
 
     template <typename T, typename cbType, typename BuffType>
