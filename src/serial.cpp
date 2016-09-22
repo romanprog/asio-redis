@@ -22,14 +22,9 @@ void serial::__req_poc()
     auto req_handler = [this](std::error_code ec, std::size_t bytes_sent)
     {
         if (ec) {
-            serial_query_adapter q_tmp;
-            while (_sended_queries.try_pop(q_tmp)) {
-                auto cb = q_tmp.get_callback();
-                cb(1, resp_data());
-                _req_proc_running.store(false);
-                __req_proc_manager();
-            }
+            std::lock_guard<std::mutex> lock(_buff_mux);
             __socket_error_hendler(ec);
+            return;
         }
         __reset_timeout();
         __resp_proc();
@@ -75,9 +70,8 @@ void serial::__resp_proc()
         __reset_timeout();
 
         if (ec) {
-            if (!_sended_queries.empty() || !_query_queue.empty())
-                __socket_error_hendler(ec);
-
+            std::lock_guard<std::mutex> lock(_buff_mux);
+            __socket_error_hendler(ec);
             return;
         }
         _reading_buff.accept(bytes_sent);
@@ -93,7 +87,7 @@ void serial::__resp_proc()
         if (_sended_queries.empty()) {
             if (_stop_in_progress && _query_queue.empty())
             {
-                work_done_report();
+                _work_done_report();
                 return;
             }
             _req_proc_running.store(false);
@@ -115,6 +109,27 @@ bool serial::queues_is_empty()
 bool serial::nothing_to_send()
 {
     return _query_queue.empty();
+}
+
+void serial::soc_error_callbacks()
+{
+    serial_query_adapter q_tmp;
+    while (_sended_queries.try_pop(q_tmp)) {
+        auto cb = q_tmp.get_callback();
+        resp_data err_respond;
+        err_respond.type = respond_type::error_str;
+        err_respond.sres = "Client disconnected";
+        cb(110, err_respond);
+    }
+
+    while (_query_queue.try_pop(q_tmp)) {
+        auto cb = q_tmp.get_callback();
+        resp_data err_respond;
+        err_respond.type = respond_type::error_str;
+        err_respond.sres = "Client disconnected";
+        cb(110, err_respond);
+    }
+
 }
 
 } // namespace procs

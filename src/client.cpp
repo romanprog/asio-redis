@@ -6,7 +6,7 @@
 namespace redis {
 
 
-client::client()
+client::client(disconection_cb dh_)
     : _ev_loop(std::make_shared<asio::strand>(_io)),
       _worked_time(_ev_loop->get_io_service())
 {
@@ -14,14 +14,14 @@ client::client()
     run_thread_worker();
 }
 
-client::client(strand_ptr strand_)
+client::client(strand_ptr strand_, disconection_cb dh_)
     : _ev_loop(strand_),
       _worked_time(_ev_loop->get_io_service())
 {
     reset_timer();
 }
 
-client::client(const cl_options &opts_)
+client::client(const cl_options &opts_, disconection_cb dh_)
     : _ev_loop(std::make_shared<asio::strand>(_io)),
       _worked_time(_ev_loop->get_io_service()),
       _opts(opts_)
@@ -30,7 +30,7 @@ client::client(const cl_options &opts_)
     run_thread_worker();
 }
 
-client::client(strand_ptr strand_, const cl_options &opts_)
+client::client(strand_ptr strand_, const cl_options &opts_, disconection_cb dh_)
     : _ev_loop(strand_),
       _worked_time(_ev_loop->get_io_service()),
       _opts(opts_)
@@ -92,6 +92,15 @@ void client::async_connect(const std::string &master_ip_, unsigned master_port_,
 
 void client::async_send(const std::string &query, redis_callback cb_)
 {
+    if (!_connected.load())
+    {
+        resp_data err_respond;
+        err_respond.type = respond_type::error_str;
+        err_respond.sres = "Client disconnected";
+        // Todo: add errors numbers and it descriptions.
+        cb_(110, err_respond);
+        return;
+    }
     _master_pipeline->push(cb_, query, true);
 }
 
@@ -120,13 +129,33 @@ void client::run_thread_worker()
 
 void client::disconnect()
 {
+    _connected.store(false);
     _master_pipeline.reset();
     _master_serial.reset();
 
     _slave_pipeline_pool.clear();
     _slave_serial_pool.clear();
+}
 
-    _connected = false;
+std::future<asio::error_code> client::future_reconnect()
+{
+    std::shared_ptr<std::promise<asio::error_code>> prom_ptr = std::make_shared<std::promise<asio::error_code>>();
+    auto connected_handler = [prom_ptr](asio::error_code ec) mutable
+    {
+        prom_ptr->set_value(ec);
+    };
+
+    async_reconnect(connected_handler);
+    return prom_ptr->get_future();
+}
+
+void client::async_reconnect(confirm_cb cb_)
+{
+    disconnect();
+    if (!_master_conn && !_slave_pool.size())
+        throw std::logic_error("Can't reconect. Have no endpoint. Try connect first.");
+
+    __init_master_pipeline(cb_);
 }
 
 void client::set_opts(const cl_options & opts_)
@@ -147,19 +176,15 @@ void client::reset_timer()
 client::~client()
 {
     _worked_time.cancel();
-
-    _master_pipeline.reset();
-    _master_serial.reset();
-
-    _slave_pipeline_pool.clear();
-    _slave_serial_pool.clear();
-
+    disconnect();
     _thread_worker.join();
 }
 
 void client::__proc_disconnect_handler(asio::error_code ec)
 {
-    disconnect();
+    _connected.store(false);
+    if (_disc_handler)
+        _disc_handler(ec);
 }
 
 void client::__init_master_pipeline(confirm_cb cb_)
@@ -201,6 +226,7 @@ void client::__ainit_spipeline_pool(confirm_cb cb_, unsigned unit_num)
 {
 
     if (_slave_pool.empty()) {
+        _connected.store(true);
         cb_(asio::error_code());
         return;
     }
@@ -251,6 +277,7 @@ void client::__ainit_sserial_pool(confirm_cb cb_, unsigned unit_num)
         _slave_serial_pool.add_unit(std::move(proc_tmp), pref);
 
         if (unit_num == _slave_pool.size() - 1) {
+            _connected.store(true);
             cb_(asio::error_code());
             return;
         }

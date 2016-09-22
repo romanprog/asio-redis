@@ -14,7 +14,7 @@
 
 // Variables for benchmark.
 std::atomic<int> qcounter{0};
-unsigned loops_count {100000};
+unsigned loops_count {1000000};
 
 int main () {
     using namespace redis;

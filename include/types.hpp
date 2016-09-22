@@ -57,9 +57,9 @@ struct cl_options
     }
 
     // Client connection timeout in milliseconds.
-    unsigned conn_timeout {30000};
+    unsigned conn_timeout {3000};
     // Server respond timeout in milliseconds.
-    unsigned resp_timeout {30000};
+    unsigned resp_timeout {3000};
 };
 
 

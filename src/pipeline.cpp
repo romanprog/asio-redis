@@ -21,6 +21,10 @@ pipeline::~pipeline()
 
 void pipeline::push(redis_callback cb_, const std::string &query_, bool one_line_query)
 {
+    // Waiting for free query space in buffer.
+    // Lock mutex for for undivided operation sequence (callback push
+    // to cb queue and add query to buffer).
+    std::unique_lock<std::mutex> lock(_buff_mux);
 
     if (_stop_in_progress) {
         resp_data resp;
@@ -29,10 +33,7 @@ void pipeline::push(redis_callback cb_, const std::string &query_, bool one_line
         cb_(100, resp);
         return;
     }
-    // Waiting for free query space in buffer.
-    // Lock mutex for for undivided operation sequence (callback push
-    // to cb queue and add query to buffer).
-    std::unique_lock<std::mutex> lock(_buff_mux);
+
     _sending_confirm_cond.wait(lock,
                                [this, &query_](){ return !_sending_buff.check_overflow(query_.size()); }
                               );
@@ -53,19 +54,19 @@ void pipeline::__req_poc()
         _sending_buff.read_mem_locker()->unlock();
 
         if (!ec) {
-            __reset_timeout();
             // Notify all clients, waiting for free space in buffer.
             // Lock mutex for sending "data transfer report" for buffer
             // (output_buff::sending_report modify buffer state).
             std::lock_guard<std::mutex> lock(_buff_mux);
+            __reset_timeout();
             _sending_buff.sending_report(bytes_sent);
             _sending_confirm_cond.notify_all();
         } else
         {
+            std::lock_guard<std::mutex> lock(_buff_mux);
             __socket_error_hendler(ec);
             return;
         }
-
 
         _req_proc_running.store(false);
         __req_proc_manager();
@@ -73,8 +74,11 @@ void pipeline::__req_poc()
     };
 
     if (!_timer_is_started) {
-        _timer_is_started = true;
-        __reset_timeout();
+        std::lock_guard<std::mutex> lock(_buff_mux);
+        if (!_error_status) {
+            _timer_is_started = true;
+            __reset_timeout();
+        }
     }
     _sending_buff.read_mem_locker()->lock();
     _socket->async_send(asio::buffer(_sending_buff.new_data(), _sending_buff.new_data_size()), _ev_loop->wrap(req_handler));
@@ -87,38 +91,42 @@ void pipeline::__resp_proc()
     auto resp_handler = [this](std::error_code ec, std::size_t bytes_sent)
     {
           if (ec) {
-              if (!_cb_queue.empty())
-                __socket_error_hendler(ec);
-
+              _sending_buff.read_mem_locker()->unlock();
+              std::lock_guard<std::mutex> lock(_buff_mux);
+              __socket_error_hendler(ec);
               return;
           }
 
           _reading_buff.accept(bytes_sent);
 
-
-
           while (_resp_parser.parse_one(_respond))
           {
               redis_callback cb;
               // Call client function.
-              if (!_cb_queue.try_pop(cb))
+              if (!_cb_queue.try_pop(cb)) {
+                  // Have socket error (disconnected).
+                  if (_error_status)
+                      return;
+
+                  // No socket error, have ansver, empty callback queue. Throw.
                   throw std::logic_error("No one callbacks(11). Query/resp processors sync error.");
+              }
 
               cb(0, _respond);
 
               if (_stop_in_progress && _cb_queue.empty())
               {
-                  work_done_report();
+                  _work_done_report();
                   return;
               }
-
           }
 
           if (_cb_queue.empty()) {
               _timer_is_started = false;
               _timeout_clock.cancel();
           } else {
-              __reset_timeout();
+              if (!_error_status)
+                __reset_timeout();
           }
           __resp_proc();
     };
@@ -134,6 +142,17 @@ bool pipeline::queues_is_empty()
 bool pipeline::nothing_to_send()
 {
     return _sending_buff.nothing_to_send();
+}
+
+void pipeline::soc_error_callbacks()
+{
+    redis_callback cb;
+    while (_cb_queue.try_pop(cb)) {
+        resp_data err_respond;
+        err_respond.type = respond_type::error_str;
+        err_respond.sres = "Client disconnected";
+        cb(110, err_respond);
+    }
 }
 
 } // namespace procs

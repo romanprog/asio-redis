@@ -50,8 +50,10 @@ private:
 
     void __req_poc() override;
     void __resp_proc() override;
-    inline bool queues_is_empty() override;
-    inline bool nothing_to_send() override;
+    bool queues_is_empty() override;
+    bool nothing_to_send() override;
+
+    void soc_error_callbacks() override;
 };
 
 using serial_ptr = std::shared_ptr<serial>;

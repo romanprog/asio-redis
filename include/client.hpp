@@ -21,10 +21,10 @@ using confirm_cb = std::function<void(asio::error_code)>;
 class client
 {
 public:
-    client();
-    client(strand_ptr strand_);
-    client(const cl_options &opts_);
-    client(strand_ptr strand_, const cl_options &opts_);
+    client(disconection_cb dh_ = nullptr);
+    client(strand_ptr strand_, disconection_cb dh_ = nullptr);
+    client(const cl_options &opts_, disconection_cb dh_ = nullptr);
+    client(strand_ptr strand_, const cl_options &opts_, disconection_cb dh_ = nullptr);
 
     /// //////////////////////////// Connection section //////////////////////////////////////////////
     ///
@@ -130,29 +130,68 @@ public:
     template <typename CmdType, typename cbType>
     void async_send(const query<CmdType, buff::common_buffer> & q_, cbType && cb_)
     {
+        if (!_connected.load())
+        {
+            resp_data err_respond;
+            err_respond.type = respond_type::error_str;
+            err_respond.sres = "Client disconnected";
+            // Todo: add errors numbers and it descriptions.
+            cb_(110, err_respond);
+            return;
+        }
         async_send_pipe(q_, std::forward<cbType>(cb_), typename CmdType::only_master_t());
     }
 
     template <typename CmdType, typename cbType>
     void async_send(const query<CmdType, buff::direct_write_buffer> & q_, cbType && cb_)
     {
+        if (!_connected.load())
+        {
+            resp_data err_respond;
+            err_respond.type = respond_type::error_str;
+            err_respond.sres = "Client disconnected";
+            // Todo: add errors numbers and it descriptions.
+            cb_(110, err_respond);
+            return;
+        }
         async_send_serial(q_, std::forward<cbType>(cb_), typename CmdType::only_master_t());
     }
 
     template <typename CmdType, typename cbType>
     void async_send_master(const query<CmdType, buff::common_buffer> & q_, cbType && cb_)
     {
+        if (!_connected.load())
+        {
+            resp_data err_respond;
+            err_respond.type = respond_type::error_str;
+            err_respond.sres = "Client disconnected";
+            // Todo: add errors numbers and it descriptions.
+            cb_(110, err_respond);
+            return;
+        }
         async_send_pipe(q_, std::forward<cbType>(cb_), std::true_type());
     }
 
     template <typename CmdType, typename cbType>
     void async_send_master(const query<CmdType, buff::direct_write_buffer> & q_, cbType && cb_)
     {
+        if (!_connected.load())
+        {
+            resp_data err_respond;
+            err_respond.type = respond_type::error_str;
+            err_respond.sres = "Client disconnected";
+            // Todo: add errors numbers and it descriptions.
+            cb_(110, err_respond);
+            return;
+        }
         async_send_serial(q_, std::forward<cbType>(cb_),  std::true_type());
     }
 
     void run_thread_worker();
     void disconnect();
+    std::future<asio::error_code> future_reconnect();
+
+    void async_reconnect(confirm_cb cb_);
     void set_opts(const cl_options &opts_);
 
     ~client();
@@ -163,7 +202,7 @@ private:
     asio::steady_timer _worked_time;
     std::thread _thread_worker;
 
-    conn_manager_ptr _master_conn;
+    conn_manager_ptr _master_conn {nullptr};
     procs::pipeline_ptr _master_pipeline;
     procs::serial_ptr _master_serial;
 
@@ -172,10 +211,11 @@ private:
     serial_pool _slave_serial_pool;
 
     cl_options _opts;
+    disconection_cb _disc_handler;
 
     void __proc_disconnect_handler(asio::error_code ec);
 
-    bool _connected {false};
+    std::atomic<bool> _connected {false};
 
     void reset_timer();
 

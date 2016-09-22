@@ -50,8 +50,9 @@ protected:
     std::promise<void> _work_done_waiter;
 
     void stop();
-    void work_done_report();
+    void _work_done_report();
     void __socket_error_hendler(std::error_code ec);
+    virtual void soc_error_callbacks() = 0;
     bool _error_status {false};
 
     // Timer

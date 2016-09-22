@@ -89,7 +89,7 @@ void output_buff::add_query(const std::string &query, bool plus_rn)
 bool output_buff::check_overflow(size_t need_write)
 {
     // manage_mem();
-    if ((top_offset() + need_write) >= max_buff_size - 100)
+    if ((top_offset() + need_write) >= max_buff_size)
         return true;
 
     return false;

@@ -11,13 +11,12 @@ proc_abstract::proc_abstract(redis::strand_ptr main_loop_, redis::soc_ptr &&soc_
       _dsconn_handler(dh_),
       _timeout_clock(_ev_loop->get_io_service()),
       _timeout_seconds(timeout_)
-
 {
 }
 
 proc_abstract::~proc_abstract()
 {
-    _socket->cancel();
+    _timeout_clock.cancel();
     _socket->close();
 }
 
@@ -59,7 +58,7 @@ void proc_abstract::stop()
     }
 }
 
-void proc_abstract::work_done_report()
+void proc_abstract::_work_done_report()
 {
     _work_done_waiter.set_value();
 }
@@ -69,10 +68,17 @@ void proc_abstract::__socket_error_hendler(std::error_code ec)
     // Do this once.
     if (!_error_status) {
         _error_status = true;
+        _stop_in_progress = true;
+
         if (_dsconn_handler)
             _dsconn_handler(ec);
-        std::cout << ec.message() << std::endl;
-        // throw std::logic_error(ec.message());
+        _timeout_clock.cancel();
+        _socket->cancel();
+        _socket->close();
+        _sending_buff.reset();
+        _work_done_report();
+        _sending_confirm_cond.notify_all();
+        soc_error_callbacks();
     }
 }
 

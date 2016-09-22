@@ -38,6 +38,7 @@ int main () {
     };
 
     redis::client cl;
+
     auto conn_f = cl.future_connect("127.0.0.1", 6379);
     conn_f.wait();
 
