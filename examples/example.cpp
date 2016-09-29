@@ -17,7 +17,7 @@
 
 
 std::atomic<int> qcounter{0};
-unsigned loops_count {10000000};
+unsigned loops_count {1000000};
 
 int main () {
 
@@ -50,7 +50,7 @@ int main () {
         std::cout << "Connected!" <<std::endl;
     }
 
-    query<cmd::set> incr_query("test");
+    query<cmd::incr> incr_query("test");
     profiler::global().startpoint();
 
     for (int i = 0; i < loops_count/100; ++i) {

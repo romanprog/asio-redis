@@ -56,8 +56,6 @@ public:
         accept(sizeof(T));
     }
 
-    std::shared_ptr<std::mutex> read_mem_locker();
-
     void operator << (const std::string & str);
     void operator << (const char * str);
 
@@ -67,9 +65,22 @@ protected:
     size_t top_offset() const;
     void change_data_top(size_t new_data_top);
     void reset_size();
-    std::shared_ptr<std::mutex> _realloc_mux;
     // 10 Mb
     const size_t max_buff_size {10485760};
+
+
+    inline void remalloc_free_mem()
+    {
+        size_t rs_size_tmp = calculate_mem(std::max(size_reserved() - size_filled(), _basic_block_size));
+        _reserved = std::min(rs_size_tmp, max_buff_size);
+
+
+        _cdata = static_cast<char *> (malloc(_reserved));
+
+        // Buffer soft reset;
+        _reserved = rs_size_tmp;
+        reset(true);
+    }
 
 private:
     const size_t _basic_block_size {1024};
@@ -77,8 +88,6 @@ private:
     size_t _reserved {0};
     size_t _size {0};
     char * _cdata;
-
-
 
 };
 

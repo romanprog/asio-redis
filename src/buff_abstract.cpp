@@ -4,8 +4,7 @@
 
 
 buff_abstract::buff_abstract()
-    : _realloc_mux(std::make_shared<std::mutex>()),
-      _reserved(calculate_mem(_basic_block_size))
+    : _reserved(calculate_mem(_basic_block_size))
 {
     // Allocate first memory block.
     _cdata = static_cast<char *>(malloc(_reserved));
@@ -45,7 +44,6 @@ bool buff_abstract::accept(size_t bytes_readed)
 
 void buff_abstract::release(size_t size)
 {
-
     if (size < size_avail())
         return;
 
@@ -56,12 +54,8 @@ void buff_abstract::release(size_t size)
         if (_top_offset + size > max_buff_size)
             throw std::out_of_range("Buffer overflow. Max - " + std::to_string(max_buff_size/1000) + "Kb");
 
-        _reserved = calculate_mem(size);
-        // Lock mutex before memory reallocate.
-        // Thish mutex must be locked in pipeline processor before "async_send", and unlock primarily in confirmation callback.
-        // This prevents reading from freed memory.
-        std::lock_guard<std::mutex> _mem_lock(*_realloc_mux);
-        _cdata = static_cast<char *>(realloc(_cdata, std::min(_reserved, max_buff_size)));
+        _reserved = std::min(calculate_mem(size), max_buff_size);
+        _cdata = static_cast<char *>(realloc(_cdata, _reserved));
     }
     _size = _top_offset + size;
 }
@@ -79,7 +73,6 @@ void buff_abstract::reset(bool soft_reset)
     if (!soft_reset) {
         _reserved = calculate_mem(_basic_block_size);
         _cdata = static_cast<char *>(realloc(_cdata, _reserved));
-
     }
     when_reseted();
 }
@@ -98,12 +91,6 @@ size_t buff_abstract::size_reserved() const
 {
     return _reserved;
 }
-
-std::shared_ptr<std::mutex> buff_abstract::read_mem_locker()
-{
-    return _realloc_mux;
-}
-
 
 void buff_abstract::operator <<(const char *str)
 {

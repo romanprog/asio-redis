@@ -67,7 +67,7 @@ int main () {
         std::cout << "Connected!" <<std::endl;
     }
 
-    query<cmd::get> incr_query("test");
+    query<cmd::get> incr_query("test1");
     query<cmd::get> incr_query2("test2");
     query<cmd::get> incr_query3("test3");
     profiler::global().startpoint();

@@ -14,7 +14,6 @@ public:
     explicit output_adapter(BaseBuffType & buff_)
         :_base_buffer(buff_)
     {
-
     }
 
     // Return true if all contained data already sended (and confirmed).

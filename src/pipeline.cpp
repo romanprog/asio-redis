@@ -51,7 +51,7 @@ void pipeline::__req_poc()
 {
     auto req_handler = [this](std::error_code ec, std::size_t bytes_sent)
     {
-        _sending_buff.read_mem_locker()->unlock();
+        //_sending_buff.read_mem_locker()->unlock();
 
         if (!ec) {
             // Notify all clients, waiting for free space in buffer.
@@ -80,8 +80,8 @@ void pipeline::__req_poc()
             __reset_timeout();
         }
     }
-    _sending_buff.read_mem_locker()->lock();
-    _socket->async_send(asio::buffer(_sending_buff.new_data(), _sending_buff.new_data_size()), _ev_loop->wrap(req_handler));
+    // _sending_buff.read_mem_locker()->lock();
+    _socket->async_write_some(_sending_buff.get_buffer(), _ev_loop->wrap(req_handler));
 
 }
 
@@ -91,7 +91,7 @@ void pipeline::__resp_proc()
     auto resp_handler = [this](std::error_code ec, std::size_t bytes_sent)
     {
           if (ec) {
-              _sending_buff.read_mem_locker()->unlock();
+              // _sending_buff.read_mem_locker()->unlock();
               std::lock_guard<std::mutex> lock(_buff_mux);
               __socket_error_hendler(ec);
               return;
